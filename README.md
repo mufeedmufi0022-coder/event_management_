@@ -1,82 +1,83 @@
-# Event Management MVP
+# Event Management MVP (Stage-2)
 
-A premium, all-in-one Event Management platform built with **Flutter** and **Firebase**. This application connects event organizers (Users) with service providers (Vendors) under a unified **Admin** oversight.
+A premium, production-ready Event Management platform built with **Flutter** and **Firebase**. This stage introduces advanced lifecycles, stability controls, and professional scale features.
 
 ## 🚀 Tech Stack
 - **Frontend**: Flutter (v3.9.2 sdk)
 - **Backend**: Firebase (Authentication, Firestore, Storage)
 - **State Management**: Provider
 - **Maps & Location**: FlutterMap + Nominatim Search API
-- **Networking**: Http (for Geocoding)
+- **Calendar**: Table Calendar (for Vendor Availability)
 - **Media**: Image Picker + Firebase Storage
 
 ---
 
-## 🎭 User Roles & Features
+## 🎭 Advanced Lifecycle & Roles
 
 ### 👤 User (Organizer)
-- **Authentication**: Secure Login/Registration with real-time error feedback (styled SnackBars).
-- **Dashboard**: Overview of all created events.
-- **Event Management**: 
-  - Create new events with name, type, and date.
-  - **Searchable Location Picker**: Search for venues using a real map or drop pins to auto-grab addresses.
-- **Discover Vendors**: 
-  - Browse a curated list of approved vendors.
-  - View **Detailed Profiles**: Branded headers, descriptions, and full product galleries.
-  - **Product/Service List**: See individual pricing for every item a vendor offers.
-- **Real-time Communication**: 
-  - Direct Chat with vendors to negotiate and discuss details.
-  - Persistent message history in the dedicated "Chats" tab.
-- **Booking System**: Select an event and send booking requests to preferred vendors.
-- **Profile**: Account management and secure Logout confirmation.
+- **Enhanced Event Tracking**:
+    - **Draft → Active → Completed → Archived**: Manage the full journey of an event.
+    - **Status Badges**: Real-time visual indicators of event progress.
+    - **Timeline View**: Separate 'Active' and 'Past' segments for clutter-free management.
+- **Dynamic Booking Flow**:
+    - **Request → Quote → Transact**: Request services and receive formal quotations.
+    - **Quotation Review**: Accept or Reject vendor quotes with one-tap actions.
+- **Smart Discovery**:
+    - **Availability Awareness**: Only book vendors who are not "Blocked" on your event date.
+- **Communication Controls**:
+    - **Booking-Locked Chat**: Messaging only enables once a booking request is initiated.
 
 ### 🏪 Vendor (Service Provider)
-- **Business Setup**: Step-by-step onboarding for new vendors.
-- **Profile Branding**: 
-  - Upload an official **Company Logo**.
-  - Set business name, service category (Catering, Photography, DJ, etc.), and contact info.
-- **Location Precision**: Use the searchable map to set the exact business physical location.
-- **Product Gallery**: 
-  - Add specific products or services with photos.
-  - **Individual Pricing**: Set a clear price tag for every photo in your gallery.
-- **Request Management**: Receive, Review, and **Approve/Reject** booking requests from users.
-- **Real-time Chat**: Reply to user inquiries instantly via the "Chats" navigation tab.
-- **Profile Tab**: View public appearance and manage settings.
+- **Availability Management**:
+    - **Calendar Control**: Integrated Table-Calendar to mark dates as 'Available' or 'Blocked'.
+    - **Validation**: System automatically prevents booking requests on blocked dates.
+- **Professional Quotation System**:
+    - **Submit Quotes**: Send formal pricing and detailed notes to users.
+    - **Quotation Immutability**: Once accepted, quotes are fixed to ensure trust.
+- **Lifecycle Management**:
+    - **Accepted → Completed**: Update booking status as the service is delivered.
+    - **Automated Archive**: Completed bookings move to a dedicated history section.
+- **Smart Communication**:
+    - **Read-Only Mode**: Chats automatically lock after a booking is finalized or cancelled.
 
-### 🛡️ Admin (System Oversight)
-- **Approval System**: Review pending vendor applications to ensure quality and authenticity.
-- **Dashboard Summary**: Real-time counts of total users, vendors, and events.
-- **Event Oversight**: Comprehensive list of all events happening on the platform.
-- **Admin Console**: dedicated secure entry point for system administrators.
-- **Logout/Exit Security**: Specialized exit dialogs to prevent accidental session termination.
-
----
-
-## ✨ Premium UI/UX Highlights
-- **Modern Aesthetics**: A curated palette using deep purples (`#904CC1`), soft greys, and vibrant status colors.
-- **Dynamic Feedback**: Custom **Floating SnackBars** for error handling and success notifications.
-- **Smooth Navigation**: High-performance `BottomNavigationBar` and `Sliver` effects for fluid transitions.
-- **Searchable Map**: Integrated search bar on maps to avoid manual typing of long addresses.
-- **Security First**: `PopScope` protection on all dashboards to prevent accidental app exits via the back gesture.
+### 🛡️ Admin (System Governance)
+- **Global Audit Logs**:
+    - **Real-time Feed**: A centralized stream of every status change, approval, and cancellation.
+    - **Transparency**: Every action logs the Actor ID and precise timestamp.
+- **Conflict & Error Resolution**:
+    - **Manual Override**: Admins can force-update any booking status for dispute resolution.
+    - **Visibility**: Access to a global registry of all events and bookings.
+- **Data Integrity**:
+    - **Soft Delete System**: Implemented `isActive: false` across Users, Vendors, and Events to preserve audit trails while cleaning the UI.
 
 ---
 
-## 🛠️ Project Structure
-- `lib/models`: Data structures (Event, Vendor, Booking, Chat, Message).
-- `lib/providers`: State management logic for Auth, Admin, User, Vendor, and Chat.
-- `lib/services`: Firebase interaction layers (Firestore queries, Storage uploads, Auth logic).
-- `lib/views`: 
-  - `admin/`: Admin specific screens.
-  - `auth/`: Login, Register, and Onboarding.
-  - `user/`: Organizer tools and Vendor discovery.
-  - `vendor/`: Business management screens.
-  - `common/`: Shared components (Chat, Searchable Map, Splash).
+## 🏗️ System Architecture (Stage-2)
+
+### 📂 Models & Schema
+- **EventModel**: Extended with `status` and `isActive` flags.
+- **BookingModel**: Enhanced with `expiresAt`, `quotePrice`, `quoteNote`, and multi-stage status.
+- **VendorModel**: Integrated `availability` map (Date string to status).
+- **LogModel**: New schema for system-wide audit logging.
+
+### ⚡ Services & Providers
+- **NotificationService**: Architecture ready for FCM (Push Notifications).
+- **Audit Logging**: Integrated into all services (`UserService`, `VendorService`, `AdminService`).
+- **Access Control**: Logic in `ChatService` to enforce communication boundaries.
 
 ---
 
-## ⚙️ How to Run
-1. Ensure Flutter is installed.
-2. Clone the repository.
-3. Run `flutter pub get` to fetch dependencies.
-4. (Optional) Run `flutter run` on your preferred emulator or device.
-# event_management
+## ✨ Design & Experience
+- **Branding**: Consistent deep purple (#904CC1) accentuation throughout the app.
+- **Micro-interactions**: Smooth transitions between dashboard tabs and custom floating notifications.
+- **Stability**: `PopScope` integration guards against accidental app exits.
+
+---
+
+## ⚙️ Development Setup
+1.  **Dependencies**: Run `flutter pub get` to install `table_calendar`, `provider`, and Firebase plugins.
+2.  **Firebase**: Ensure `google-services.json` is in `android/app/`.
+3.  **Run**: Execute `flutter run` for live testing.
+
+---
+*Developed for Lifecycle, Stability & Scale.*
