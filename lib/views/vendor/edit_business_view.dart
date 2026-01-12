@@ -133,10 +133,10 @@ class _EditBusinessViewState extends State<EditBusinessView> {
     }
   }
 
-  void _addProduct() {
-    String name = '';
-    String price = '';
-    String? imageUrl;
+  void _editProduct({ProductModel? product, int? index}) {
+    String name = product?.name ?? '';
+    String price = product?.price ?? '';
+    String? imageUrl = product?.imageUrl;
 
     showModalBottomSheet(
       context: context,
@@ -161,9 +161,9 @@ class _EditBusinessViewState extends State<EditBusinessView> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Add Product/Service',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Text(
+                    product == null ? 'Add Product/Service' : 'Edit Product/Service',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
@@ -212,7 +212,7 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                           const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
+                                children: [
                                 Icon(Icons.add_a_photo_outlined, size: 32, color: Color(0xFF904CC1)),
                                 SizedBox(height: 8),
                                 Text('Add Photo', style: TextStyle(color: Color(0xFF904CC1), fontSize: 12, fontWeight: FontWeight.bold)),
@@ -227,14 +227,18 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                 ),
               ),
               const SizedBox(height: 32),
-              _buildTextFieldInPopup('Item Name', (v) => name = v, Icons.shopping_bag_outlined),
-              const SizedBox(height: 16),
-              _buildTextFieldInPopup('Price (₹)', (v) => price = v, Icons.payments_outlined, keyboardType: TextInputType.number),
-              const SizedBox(height: 32),
+              _buildTextFieldInPopup('Item Name', (v) => name = v, Icons.shopping_bag_outlined, initialValue: name),
+                const SizedBox(height: 16),
+              _buildTextFieldInPopup('Price (₹)', (v) => price = v, Icons.payments_outlined, keyboardType: TextInputType.number, initialValue: price),
+                const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: imageUrl != null && name.isNotEmpty ? () {
                   setState(() {
-                    _products.add(ProductModel(imageUrl: imageUrl!, price: price, name: name));
+                      if (product == null) {
+                        _products.add(ProductModel(imageUrl: imageUrl!, price: price, name: name));
+                      } else {
+                        _products[index!] = ProductModel(imageUrl: imageUrl!, price: price, name: name);
+                      }
                   });
                   Navigator.pop(context);
                 } : null,
@@ -245,7 +249,7 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
-                child: const Text('Add Product', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(product == null ? 'Add Product' : 'Update Product', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ],
           ),
@@ -254,8 +258,9 @@ class _EditBusinessViewState extends State<EditBusinessView> {
     );
   }
 
-  Widget _buildTextFieldInPopup(String label, Function(String) onChanged, IconData icon, {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextFieldInPopup(String label, Function(String) onChanged, IconData icon, {TextInputType keyboardType = TextInputType.text, String initialValue = ''}) {
     return TextFormField(
+      initialValue: initialValue,
       onChanged: onChanged,
       keyboardType: keyboardType,
       decoration: InputDecoration(
@@ -369,7 +374,7 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Products & Services', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  TextButton.icon(onPressed: _addProduct, icon: const Icon(Icons.add), label: const Text('Add New')),
+                  TextButton.icon(onPressed: () => _editProduct(), icon: const Icon(Icons.add), label: const Text('Add New')),
                 ],
               ),
               const SizedBox(height: 16),
@@ -377,24 +382,59 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                 const Center(child: Text('No products added yet', style: TextStyle(color: Colors.grey)))
               else
                 SizedBox(
-                  height: 150,
+                  height: 180,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: _products.length,
                     itemBuilder: (context, index) {
                       final p = _products[index];
                       return Container(
-                        width: 120,
+                        width: 140,
                         margin: const EdgeInsets.only(right: 12),
                         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
                         child: Column(
                           children: [
-                            Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), child: ImageHelper.displayImage(p.imageUrl, fit: BoxFit.cover, width: double.infinity))),
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), 
+                                    child: ImageHelper.displayImage(p.imageUrl, fit: BoxFit.cover, width: double.infinity)
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => _editProduct(product: p, index: index),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                            child: const Icon(Icons.edit, size: 14, color: Color(0xFF904CC1)),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        GestureDetector(
+                                          onTap: () => setState(() => _products.removeAt(index)),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                            child: const Icon(Icons.delete, size: 14, color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             Padding(
                               padding: const EdgeInsets.all(4.0),
                               child: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                             ),
-                            Text('₹${p.price}', style: const TextStyle(color: Color(0xFF904CC1), fontSize: 10, fontWeight: FontWeight.bold)),
+                            Text('₹${p.price}', style: const TextStyle(color: Color(0xFF904CC1), fontSize: 11, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
                           ],
                         ),
                       );

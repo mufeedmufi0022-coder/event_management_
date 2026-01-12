@@ -47,18 +47,19 @@ class VendorDetailsView extends StatelessWidget {
                           ],
                         ),
                       ),
-                      CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: IconButton(
-                          icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF904CC1)),
-                          onPressed: () async {
-                            String chatId = await chatProvider.startChat(user!.uid, vendor.vendorId);
-                            if (context.mounted) {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId)));
-                            }
-                          },
+                      if (user?.uid != vendor.vendorId)
+                        CircleAvatar(
+                          backgroundColor: Colors.white,
+                          child: IconButton(
+                            icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF904CC1)),
+                            onPressed: () async {
+                              String chatId = await chatProvider.startChat(user!.uid, vendor.vendorId);
+                              if (context.mounted) {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId)));
+                              }
+                            },
+                          ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -121,19 +122,21 @@ class VendorDetailsView extends StatelessWidget {
           ),
         ],
       ),
-      bottomSheet: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-        child: ElevatedButton(
-          onPressed: () => _showBookingDialog(context, vendor, userProvider, user!.uid),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF904CC1),
-            minimumSize: const Size(double.infinity, 56),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      bottomSheet: (user?.uid == vendor.vendorId) 
+        ? null 
+        : Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+            child: ElevatedButton(
+              onPressed: () => _showBookingDialog(context, vendor, userProvider, user!.uid),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF904CC1),
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('Book Now', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
           ),
-          child: const Text('Book Now', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
-      ),
     );
   }
 

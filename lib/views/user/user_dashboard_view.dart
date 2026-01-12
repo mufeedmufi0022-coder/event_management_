@@ -13,6 +13,8 @@ import '../../core/utils/image_helper.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/locale_provider.dart';
 
+import 'user_home_tab.dart';
+
 class UserDashboardView extends StatefulWidget {
   const UserDashboardView({super.key});
 
@@ -56,7 +58,7 @@ class _UserDashboardViewState extends State<UserDashboardView> {
   }
 
   final List<Widget> _tabs = [
-    const VendorListView(),
+    const UserHomeTab(),
     const UserBookingsTab(),
     const ChatListView(),
     const UserProfileTab(),

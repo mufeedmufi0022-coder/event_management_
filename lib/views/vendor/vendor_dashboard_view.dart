@@ -7,6 +7,7 @@ import '../../models/booking_model.dart';
 import 'edit_business_view.dart';
 import 'vendor_availability_tab.dart';
 import '../common/chat_view.dart';
+import '../user/vendor_details_view.dart';
 import '../../core/utils/image_helper.dart';
 
 class VendorDashboardView extends StatefulWidget {
@@ -329,13 +330,35 @@ class VendorProfileTab extends StatelessWidget {
         title: const Text('Business Profile'),
         actions: [
           IconButton(
+            onPressed: () {
+              if (vendor != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => VendorDetailsView(vendor: vendor)),
+                );
+              }
+            },
+            icon: const Icon(Icons.visibility_outlined),
+            tooltip: 'Preview Profile',
+          ),
+          IconButton(
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const EditBusinessView()),
             ),
-            icon: const Icon(Icons.edit),
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Business Registry',
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const EditBusinessView()),
+        ),
+        icon: const Icon(Icons.shopping_bag_outlined),
+        label: const Text('Add Product'),
+        backgroundColor: const Color(0xFF904CC1),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -351,13 +374,37 @@ class VendorProfileTab extends StatelessWidget {
                 ? const Icon(Icons.store, size: 50, color: Color(0xFF904CC1)) 
                 : null,
             ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditBusinessView()),
+              ),
+              icon: const Icon(Icons.edit, size: 16),
+              label: const Text('Edit Identity'),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF904CC1)),
+            ),
             const SizedBox(height: 16),
             Text(vendor?.businessName ?? 'No Name',
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             Text(vendor?.serviceType ?? 'No Type', style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.bold)),
             const Divider(height: 32),
             _buildInfoRow(Icons.location_on_outlined, vendor?.location ?? 'No location'),
+            _buildInfoRow(Icons.phone_outlined, vendor?.contactNumber ?? 'No contact number'),
             _buildInfoRow(Icons.payments_outlined, vendor?.priceRange ?? 'No price range'),
+            const SizedBox(height: 16),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('About Business', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                vendor?.description ?? 'No description provided.',
+                style: const TextStyle(color: Colors.grey, height: 1.5),
+              ),
+            ),
             const SizedBox(height: 24),
             const Align(
               alignment: Alignment.centerLeft,
@@ -380,20 +427,54 @@ class VendorProfileTab extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final p = vendor.products[index];
                   return Container(
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[200]!)),
-                    child: Column(
-                      children: [
-                        Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), child: ImageHelper.displayImage(p.imageUrl, fit: BoxFit.cover, width: double.infinity))),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Column(
+                    decoration: BoxDecoration(
+                      color: Colors.white, 
+                      borderRadius: BorderRadius.circular(12), 
+                      border: Border.all(color: Colors.grey[200]!)
+                    ),
+                    child: InkWell(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => VendorDetailsView(vendor: vendor)),
+                      ),
+                      child: Stack(
+                        children: [
+                          Column(
                             children: [
-                              Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), maxLines: 1),
-                              Text('₹${p.price}', style: const TextStyle(color: Color(0xFF904CC1), fontSize: 13, fontWeight: FontWeight.bold)),
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), 
+                                  child: ImageHelper.displayImage(p.imageUrl, fit: BoxFit.cover, width: double.infinity)
+                                )
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                  children: [
+                                    Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), maxLines: 1),
+                                    Text('₹${p.price}', style: const TextStyle(color: Color(0xFF904CC1), fontSize: 13, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Colors.white.withOpacity(0.9),
+                              child: IconButton(
+                                icon: const Icon(Icons.edit, size: 14, color: Color(0xFF904CC1)),
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const EditBusinessView()),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -446,7 +527,7 @@ class VendorProfileTab extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.blue),
           const SizedBox(width: 16),
-          Text(text),
+          Expanded(child: Text(text, maxLines: 2, overflow: TextOverflow.ellipsis)),
         ],
       ),
     );

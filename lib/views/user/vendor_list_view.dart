@@ -9,13 +9,22 @@ import '../../core/utils/image_helper.dart';
 import '../../providers/locale_provider.dart';
 
 class VendorListView extends StatelessWidget {
-  const VendorListView({super.key});
+  final String? category;
+  const VendorListView({super.key, this.category});
 
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final lp = context.watch<LocaleProvider>();
-    final vendors = userProvider.approvedVendors;
+    
+    // Filter vendors if category is provided
+    final vendors = category == null 
+        ? userProvider.approvedVendors 
+        : userProvider.approvedVendors.where((v) => 
+            v.serviceType.toLowerCase().contains(category!.toLowerCase()) || 
+            category == 'Others' ||
+            category == 'മറ്റുള്ളവ'
+          ).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F8),
@@ -25,16 +34,20 @@ class VendorListView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              lp.get('Discover Vendors', 'വെണ്ടർമാരെ കണ്ടെത്തുക'),
+              category ?? lp.get('Discover Vendors', 'വെണ്ടർമാരെ കണ്ടെത്തുക'),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Row(
               children: [
                 const Icon(Icons.location_on, size: 12, color: Color(0xFF904CC1)),
                 const SizedBox(width: 4),
-                Text(
-                  context.watch<AuthProvider>().userModel?.currentAddress ?? lp.get('Locating...', 'തിരയുന്നു...'),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.normal),
+                Expanded(
+                  child: Text(
+                    context.watch<AuthProvider>().userModel?.currentAddress ?? lp.get('Locating...', 'തിരയുന്നു...'),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.normal),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
