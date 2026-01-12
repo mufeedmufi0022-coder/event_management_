@@ -8,12 +8,25 @@ import '../models/log_model.dart';
 class AdminService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Stream of counts (only active ones)
-  Stream<Map<String, int>> getCounts() {
+  // Unified stream for all user-related data (lists and counts)
+  Stream<Map<String, dynamic>> getAdminDataStream() {
     return _firestore.collection('users').snapshots().map((snapshot) {
-      int users = snapshot.docs.where((d) => d['role'] == 'user' && (d.data()['isActive'] ?? true)).length;
-      int vendors = snapshot.docs.where((d) => d['role'] == 'vendor' && (d.data()['isActive'] ?? true)).length;
-      return {'users': users, 'vendors': vendors, 'events': 0}; // Events will be updated separately or in a combined stream
+      List<UserModel> all = snapshot.docs
+          .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+          .toList();
+      
+      // Calculate counts using same logic as lists
+      int uCount = all.where((u) => u.role == 'user' && u.isActive).length;
+      int vCount = all.where((u) => u.role == 'vendor' && u.isActive).length;
+      
+      return {
+        'allUsers': all,
+        'counts': {
+          'users': uCount,
+          'vendors': vCount,
+          'events': 0, // Events still separate logic if needed, or fetched elsewhere
+        }
+      };
     });
   }
 
@@ -56,9 +69,9 @@ class AdminService {
     return _firestore
         .collection('users')
         .where('role', isEqualTo: 'user')
-        .where('isActive', isEqualTo: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
+            .where((doc) => doc.data()['isActive'] != false)
             .map((doc) => UserModel.fromMap(doc.data(), doc.id))
             .toList());
   }
@@ -67,7 +80,17 @@ class AdminService {
     return _firestore
         .collection('users')
         .where('role', isEqualTo: 'vendor')
-        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .where((doc) => doc.data()['isActive'] != false)
+            .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
+  // New method to get everything in the users collection
+  Stream<List<UserModel>> getAllUsers() {
+    return _firestore
+        .collection('users')
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => UserModel.fromMap(doc.data(), doc.id))

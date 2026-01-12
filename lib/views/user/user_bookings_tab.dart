@@ -98,9 +98,32 @@ class UserBookingsTab extends StatelessWidget {
                 ],
               ),
             ] else ...[
-              const Text('Booking Details', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Booking Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 16, color: Color(0xFF904CC1)),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Service Date: ${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
-              Text('Current Status: ${booking.status.toUpperCase()}', style: const TextStyle(color: Colors.blueGrey)),
+              Row(
+                children: [
+                  const Icon(Icons.celebration, size: 16, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Occasion: ${booking.occasion ?? 'General'}',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text('Status: ${booking.status.toUpperCase()}', 
+                  style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold, fontSize: 12)),
             ],
           ],
         ),

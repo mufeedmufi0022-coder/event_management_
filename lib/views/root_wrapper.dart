@@ -5,6 +5,7 @@ import 'auth/login_screen.dart';
 import 'admin/admin_dashboard_view.dart';
 import 'user/user_dashboard_view.dart';
 import 'vendor/vendor_dashboard_view.dart';
+import 'vendor/vendor_status_view.dart';
 
 class RootWrapper extends StatelessWidget {
   const RootWrapper({super.key});
@@ -15,7 +16,7 @@ class RootWrapper extends StatelessWidget {
 
     if (authProvider.isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF904CC1))),
       );
     }
 
@@ -28,7 +29,11 @@ class RootWrapper extends StatelessWidget {
       case 'admin':
         return const AdminDashboardView();
       case 'vendor':
-        return const VendorDashboardView();
+        if (authProvider.userModel!.status == 'approved') {
+          return const VendorDashboardView();
+        } else {
+          return VendorStatusView(status: authProvider.userModel!.status);
+        }
       case 'user':
         return const UserDashboardView();
       default:

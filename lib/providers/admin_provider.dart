@@ -9,6 +9,7 @@ class AdminProvider extends ChangeNotifier {
   final AdminService _adminService = AdminService();
   
   Map<String, int> _counts = {'users': 0, 'vendors': 0, 'events': 0};
+  List<UserModel> _allUsers = [];
   List<UserModel> _users = [];
   List<UserModel> _vendors = [];
   List<EventModel> _eventsList = [];
@@ -17,8 +18,10 @@ class AdminProvider extends ChangeNotifier {
   bool _isLoading = false;
 
   Map<String, int> get counts => _counts;
+  List<UserModel> get allUsers => _allUsers;
   List<UserModel> get users => _users;
   List<UserModel> get vendors => _vendors;
+  
   List<EventModel> get eventsList => _eventsList;
   List<LogModel> get logs => _logs;
   List<BookingModel> get allBookings => _allBookings;
@@ -29,31 +32,34 @@ class AdminProvider extends ChangeNotifier {
   }
 
   void _init() {
-    _adminService.getCounts().listen((data) {
-      _counts = data;
+    // Listen to the unified user data stream
+    _adminService.getAdminDataStream().listen((data) {
+      _allUsers = data['allUsers'] as List<UserModel>;
+      _counts = Map<String, int>.from(data['counts']);
+      
+      // Update specific lists
+      _users = _allUsers.where((u) => u.role == 'user').toList();
+      _vendors = _allUsers.where((u) => u.role == 'vendor').toList();
+      
+      print('AdminProvider: Processed ${_allUsers.length} total docs. Users: ${_users.length}, Vendors: ${_vendors.length}');
       notifyListeners();
+    }, onError: (e) {
+      print('AdminProvider Stream Error: $e');
     });
 
-    _adminService.getUsers().listen((data) {
-      _users = data;
-      notifyListeners();
-    });
-
-    _adminService.getVendorUsers().listen((data) {
-      _vendors = data;
-      notifyListeners();
-    });
-
+    // Listen for events (separate collection)
     _adminService.getEvents().listen((data) {
       _eventsList = data;
       notifyListeners();
     });
 
+    // Listen for logs
     _adminService.getLogs().listen((data) {
       _logs = data;
       notifyListeners();
     });
 
+    // Listen for bookings
     _adminService.getAllBookings().listen((data) {
       _allBookings = data;
       notifyListeners();

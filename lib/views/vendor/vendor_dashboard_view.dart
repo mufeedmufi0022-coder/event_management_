@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/vendor_provider.dart';
 import '../../models/vendor_model.dart';
+import '../../models/booking_model.dart';
 import 'edit_business_view.dart';
 import 'vendor_availability_tab.dart';
 import '../common/chat_view.dart';
+import '../../core/utils/image_helper.dart';
 
 class VendorDashboardView extends StatefulWidget {
   const VendorDashboardView({super.key});
@@ -16,6 +18,13 @@ class VendorDashboardView extends StatefulWidget {
 
 class _VendorDashboardViewState extends State<VendorDashboardView> {
   int _currentIndex = 0;
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -28,11 +37,24 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
     });
   }
 
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _onItemTapped(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final vendorProvider = context.watch<VendorProvider>();
     
-    // If no profile yet, show basic setup
     if (vendorProvider.vendorModel == null && !vendorProvider.isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Setup Business')),
@@ -75,11 +97,15 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
         _showExitDialog(context);
       },
       child: Scaffold(
-        body: _tabs[_currentIndex],
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: _onPageChanged,
+          children: _tabs,
+        ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           type: BottomNavigationBarType.fixed,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: _onItemTapped,
           selectedItemColor: const Color(0xFF904CC1),
           unselectedItemColor: Colors.grey,
           items: const [
@@ -157,11 +183,33 @@ class BookingRequestsTab extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Booking ID: #${booking.bookingId.substring(0, 5)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text('Booking ID: #${booking.bookingId.length > 5 ? booking.bookingId.substring(0, 5) : booking.bookingId}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 _buildStatusBadge(booking.status),
               ],
             ),
             const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 14, color: Color(0xFF904CC1)),
+                const SizedBox(width: 8),
+                Text(
+                  'Date: ${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.celebration, size: 14, color: Colors.orange),
+                const SizedBox(width: 8),
+                Text(
+                  'Occasion: ${booking.occasion ?? 'General'}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             if (booking.status == 'requested') ...[
               const Text('Action Required', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -275,7 +323,6 @@ class VendorProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vendor = context.watch<VendorProvider>().vendorModel;
-    final user = context.watch<AuthProvider>().userModel;
 
     return Scaffold(
       appBar: AppBar(
@@ -298,7 +345,7 @@ class VendorProfileTab extends StatelessWidget {
               radius: 50, 
               backgroundColor: Colors.white,
               backgroundImage: vendor?.logoUrl != null && vendor!.logoUrl.isNotEmpty 
-                ? NetworkImage(vendor.logoUrl) 
+                ? ImageHelper.getImageProvider(vendor.logoUrl) 
                 : null,
               child: (vendor?.logoUrl == null || vendor!.logoUrl.isEmpty) 
                 ? const Icon(Icons.store, size: 50, color: Color(0xFF904CC1)) 
@@ -336,7 +383,7 @@ class VendorProfileTab extends StatelessWidget {
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[200]!)),
                     child: Column(
                       children: [
-                        Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), child: Image.network(p.imageUrl, fit: BoxFit.cover, width: double.infinity))),
+                        Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), child: ImageHelper.displayImage(p.imageUrl, fit: BoxFit.cover, width: double.infinity))),
                         Padding(
                           padding: const EdgeInsets.all(8),
                           child: Column(

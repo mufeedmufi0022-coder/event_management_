@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BookingModel {
   final String bookingId;
-  final String eventId;
+  final String? eventId; // Optional now
   final String vendorId;
   final String userId;
-  final String status; // 'requested', 'quoted', 'accepted', 'completed', 'cancelled'
+  final String status;
+  final DateTime bookingDate; // Required for direct bookings
+  final String? occasion; // e.g., Wedding, Birthday
   final DateTime? expiresAt;
   final String? quotePrice;
   final String? quoteNote;
@@ -13,10 +15,12 @@ class BookingModel {
 
   BookingModel({
     required this.bookingId,
-    required this.eventId,
+    this.eventId,
     required this.vendorId,
     required this.userId,
     required this.status,
+    required this.bookingDate,
+    this.occasion,
     this.expiresAt,
     this.quotePrice,
     this.quoteNote,
@@ -26,10 +30,12 @@ class BookingModel {
   factory BookingModel.fromMap(Map<String, dynamic> data, String id) {
     return BookingModel(
       bookingId: id,
-      eventId: data['eventId'] ?? '',
+      eventId: data['eventId'],
       vendorId: data['vendorId'] ?? '',
       userId: data['userId'] ?? '',
       status: data['status'] ?? 'requested',
+      bookingDate: (data['bookingDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      occasion: data['occasion'],
       expiresAt: (data['expiresAt'] as Timestamp?)?.toDate(),
       quotePrice: data['quotePrice'],
       quoteNote: data['quoteNote'],
@@ -43,6 +49,8 @@ class BookingModel {
       'vendorId': vendorId,
       'userId': userId,
       'status': status,
+      'bookingDate': Timestamp.fromDate(bookingDate),
+      'occasion': occasion,
       'expiresAt': expiresAt != null ? Timestamp.fromDate(expiresAt!) : null,
       'quotePrice': quotePrice,
       'quoteNote': quoteNote,

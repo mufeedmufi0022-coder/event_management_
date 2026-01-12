@@ -11,48 +11,28 @@ class PendingApprovalsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final adminProvider = context.watch<AdminProvider>();
     
-    // Filter pending users and vendors
-    final pendingUsers = adminProvider.users.where((u) => u.status == 'pending').toList();
+    // Filter pending vendors only (users no longer need approval)
     final pendingVendors = adminProvider.vendors.where((v) => v.status == 'pending').toList();
-    final totalPending = pendingUsers.length + pendingVendors.length;
+    final totalPending = pendingVendors.length;
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF1F4F8),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF904CC1),
-          foregroundColor: Colors.white,
-          title: const Text('Pending Approvals', style: TextStyle(fontWeight: FontWeight.bold)),
-          centerTitle: true,
-          bottom: const TabBar(
-            labelStyle: TextStyle(fontWeight: FontWeight.bold),
-            unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal),
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: [
-              Tab(text: 'Users'),
-              Tab(text: 'Vendors'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildPendingList(context, pendingUsers, 'Users'),
-            _buildPendingList(context, pendingVendors, 'Vendors'),
-          ],
-        ),
-        bottomNavigationBar: totalPending > 0 ? Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.white,
-          child: Text(
-            'Showing $totalPending pending requests',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
-          ),
-        ) : null,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F8),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF904CC1),
+        foregroundColor: Colors.white,
+        title: const Text('Vendor Approvals', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
       ),
+      body: _buildPendingList(context, pendingVendors, 'Vendors'),
+      bottomNavigationBar: totalPending > 0 ? Container(
+        padding: const EdgeInsets.all(16),
+        color: Colors.white,
+        child: Text(
+          'Showing $totalPending pending vendor requests',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+        ),
+      ) : null,
     );
   }
 
@@ -115,12 +95,13 @@ class PendingApprovalsView extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 8),
+              _buildInfoRow(Icons.phone_outlined, item.contactNumber ?? 'Contact not provided'),
               if (item.role == 'vendor' && item.serviceType != null) ...[
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 8),
-                _buildInfoRow(Icons.category, item.serviceType ?? 'N/A'),
-                _buildInfoRow(Icons.location_on, item.location ?? 'N/A'),
+                _buildInfoRow(Icons.category_outlined, item.serviceType ?? 'N/A'),
+                _buildInfoRow(Icons.location_on_outlined, item.location ?? 'N/A'),
               ],
               const SizedBox(height: 20),
               Row(

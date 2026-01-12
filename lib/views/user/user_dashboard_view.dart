@@ -4,8 +4,14 @@ import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
 import 'create_event_view.dart';
 import 'vendor_list_view.dart';
+import '../../models/event_model.dart';
 import 'user_bookings_tab.dart';
 import '../common/chat_view.dart';
+import '../common/terms_view.dart';
+import 'edit_profile_view.dart';
+import '../../core/utils/image_helper.dart';
+import '../../providers/chat_provider.dart';
+import '../../providers/locale_provider.dart';
 
 class UserDashboardView extends StatefulWidget {
   const UserDashboardView({super.key});
@@ -16,6 +22,13 @@ class UserDashboardView extends StatefulWidget {
 
 class _UserDashboardViewState extends State<UserDashboardView> {
   int _currentIndex = 0;
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -28,8 +41,21 @@ class _UserDashboardViewState extends State<UserDashboardView> {
     });
   }
 
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _onItemTapped(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
   final List<Widget> _tabs = [
-    const UserHomeTab(),
     const VendorListView(),
     const UserBookingsTab(),
     const ChatListView(),
@@ -38,6 +64,7 @@ class _UserDashboardViewState extends State<UserDashboardView> {
 
   @override
   Widget build(BuildContext context) {
+    final lp = context.watch<LocaleProvider>();
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -45,19 +72,22 @@ class _UserDashboardViewState extends State<UserDashboardView> {
         _showExitDialog(context);
       },
       child: Scaffold(
-        body: _tabs[_currentIndex],
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: _onPageChanged,
+          children: _tabs,
+        ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           type: BottomNavigationBarType.fixed,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: _onItemTapped,
           selectedItemColor: const Color(0xFF904CC1),
           unselectedItemColor: Colors.grey,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Events'),
-            BottomNavigationBarItem(icon: Icon(Icons.store), label: 'Vendors'),
-            BottomNavigationBarItem(icon: Icon(Icons.event_note), label: 'Bookings'),
-            BottomNavigationBarItem(icon: Icon(Icons.chat_outlined), label: 'Chats'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.search_rounded), label: lp.get('Explore', 'തിരയുക')),
+            BottomNavigationBarItem(icon: const Icon(Icons.assignment_turned_in_outlined), label: lp.get('My Bookings', 'ബുക്കിംഗുകൾ')),
+            BottomNavigationBarItem(icon: const Icon(Icons.chat_outlined), label: lp.get('Chats', 'ചാറ്റുകൾ')),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: lp.get('Profile', 'പ്രൊഫൈൽ')),
           ],
         ),
       ),
@@ -82,134 +112,11 @@ class _UserDashboardViewState extends State<UserDashboardView> {
           ),
         ],
       ),
-    ).then((value) {
-      if (value == true) {
-        // Since we can't truly "exit" in Flutter easily without SystemNavigator.pop()
-        // and usually we just want to allow the pop to happen if we let canPop: true,
-        // but for now let's just logout or let it be.
-        // In a real app we might use SystemNavigator.pop()
-      }
-    });
-  }
-}
-
-class UserHomeTab extends StatelessWidget {
-  const UserHomeTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final userProvider = context.watch<UserProvider>();
-    final events = userProvider.myEvents;
-    
-    final activeEvents = events.where((e) => e.status == 'active' || e.status == 'draft').toList();
-    final pastEvents = events.where((e) => e.status == 'completed' || e.status == 'archived').toList();
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF1F4F8),
-        appBar: AppBar(
-          title: const Text('My Events', style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          bottom: const TabBar(
-            labelColor: Color(0xFF904CC1),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Color(0xFF904CC1),
-            tabs: [
-              Tab(text: 'Active'),
-              Tab(text: 'Completed'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildEventList(context, activeEvents),
-            _buildEventList(context, pastEvents),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateEventView()),
-          ),
-          backgroundColor: const Color(0xFF904CC1),
-          foregroundColor: Colors.white,
-          label: const Text('Create Event'),
-          icon: const Icon(Icons.add),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEventList(BuildContext context, List<EventModel> events) {
-    if (events.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_available_outlined, size: 80, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            const Text('No events found in this category', style: TextStyle(color: Colors.grey)),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: events.length,
-      itemBuilder: (context, index) {
-        final event = events[index];
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            title: Text(event.eventName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text('${event.eventType} • ${event.date}', style: TextStyle(color: Colors.grey[600])),
-              ],
-            ),
-            trailing: _buildStatusBadge(event.status),
-            onTap: () {
-              // detail view eventually
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    Color color;
-    switch (status) {
-      case 'active': color = Colors.green; break;
-      case 'draft': color = Colors.orange; break;
-      case 'completed': color = Colors.blue; break;
-      case 'archived': color = Colors.grey; break;
-      default: color = Colors.grey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5)),
-      ),
-      child: Text(
-        status.toUpperCase(),
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
-      ),
     );
   }
 }
+
+// Deprecated UserHomeTab removed as events are no longer the primary focus.
 
 class UserProfileTab extends StatelessWidget {
   const UserProfileTab({super.key});
@@ -217,43 +124,162 @@ class UserProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().userModel;
+    final chatProvider = context.read<ChatProvider>();
+    final lp = context.watch<LocaleProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: Center(
+      backgroundColor: const Color(0xFFF1F4F8),
+      appBar: AppBar(
+        title: Text(lp.get('Profile', 'പ്രൊഫൈൽ')),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircleAvatar(radius: 50, child: Icon(Icons.person, size: 50)),
-            const SizedBox(height: 16),
-            Text(user?.name ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(user?.email ?? '', style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => _showLogoutDialog(context),
-              icon: const Icon(Icons.logout),
-              label: const Text('Logout'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+            Center(
+              child: Stack(
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF904CC1), width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: ImageHelper.displayImage(
+                        user?.logoUrl ?? '',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileView())),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(color: Color(0xFF904CC1), shape: BoxShape.circle),
+                        child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(height: 24),
+            Text(
+              user?.name ?? 'User',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              user?.email ?? '',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 32),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  _buildProfileTile(
+                    Icons.phone_outlined,
+                    lp.get('Phone', 'ഫോൺ'),
+                    user?.contactNumber ?? lp.get('Not Provided', 'ലഭ്യമല്ല'),
+                  ),
+                  const Divider(height: 1),
+                  _buildProfileTile(
+                    Icons.headset_mic_outlined,
+                    lp.get('Help with Admin', 'അഡ്മിനുമായി സംസാരിക്കുക'),
+                    lp.get('Support Chat', 'സപ്പോർട്ട് ചാറ്റ്'),
+                    onTap: () async {
+                      if (user != null) {
+                        // Using the initialized admin email as UID
+                        String adminUid = 'admin@event.com';
+                        String chatId = await chatProvider.startChat(user.uid, adminUid);
+                        if (context.mounted) {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId)));
+                        }
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  _buildProfileTile(
+                    Icons.description_outlined,
+                    lp.get('Terms & Conditions', 'നിബന്ധനകളും വ്യവസ്ഥകളും'),
+                    lp.get('Read our policies', 'ഞങ്ങളുടെ പോളിസികൾ വായിക്കുക'),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsView())),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ElevatedButton.icon(
+                onPressed: () => _showLogoutDialog(context),
+                icon: const Icon(Icons.logout),
+                label: Text(lp.get('Logout', 'ലോഗൗട്ട്')),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[50],
+                  foregroundColor: Colors.red,
+                  minimumSize: const Size(double.infinity, 56),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildProfileTile(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF904CC1).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: const Color(0xFF904CC1), size: 20),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+      trailing: onTap != null ? const Icon(Icons.chevron_right, size: 20, color: Colors.grey) : null,
+    );
+  }
+
   void _showLogoutDialog(BuildContext context) {
+    final lp = context.read<LocaleProvider>();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout?'),
-        content: const Text('Are you sure you want to log out?'),
+        title: Text(lp.get('Logout?', 'ലോഗൗട്ട് ചെയ്യണോ?')),
+        content: Text(lp.get('Are you sure you want to log out?', 'നിങ്ങൾക്ക് ലോഗൗട്ട് ചെയ്യണമെന്ന് ഉറപ്പാണോ?')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(lp.get('Cancel', 'റദ്ദാക്കുക'), style: const TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -261,7 +287,7 @@ class UserProfileTab extends StatelessWidget {
               Provider.of<AuthProvider>(context, listen: false).logout();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Logout'),
+            child: Text(lp.get('Logout', 'ലോഗൗട്ട്')),
           ),
         ],
       ),

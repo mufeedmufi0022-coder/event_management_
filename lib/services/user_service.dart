@@ -67,6 +67,18 @@ class UserService {
     await _firestore.collection('bookings').doc(bookingId).update({'isActive': false});
   }
 
+  // Get user's bookings
+  Stream<List<BookingModel>> getMyBookings(String uid) {
+    return _firestore
+        .collection('bookings')
+        .where('userId', isEqualTo: uid)
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => BookingModel.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
   // Helper for audit logging (simplified for now)
   Future<void> _logAction(String type, String action, String actorId) async {
     await _firestore.collection('logs').add({

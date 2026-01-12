@@ -14,8 +14,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingData> _data = [
     OnboardingData(
-      title: 'Plan with Ease',
-      description: 'Organize weddings, parties, and meetings etc - all in one place.',
+      title: 'Services Simplified',
+      description: 'Find and book the best vendors for your weddings, parties, and meetings - all in one place.',
       icon: Icons.celebration,
     ),
     OnboardingData(
@@ -24,8 +24,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.dashboard_customize,
     ),
     OnboardingData(
-      title: 'Simplify Your Planning',
-      description: 'Your perfect event is just a tap away. Let\'s begin!',
+      title: 'Booking Made Easy',
+      description: 'Our app connects you with reliable vendors in just a few taps. Let\'s begin!',
       icon: Icons.event_available,
       isLast: true,
     ),

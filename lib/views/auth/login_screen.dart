@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
+import '../../core/utils/header_clipper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isAdminMode = false;
+  bool _obscurePassword = true;
 
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
@@ -126,8 +128,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               onTap: () {
                                 setState(() {
                                   _isAdminMode = true;
-                                  _emailController.text = 'admin@event.com';
-                                  _passwordController.text = 'admin@123';
                                 });
                               },
                               child: Container(
@@ -190,14 +190,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Password',
-                          prefixIcon: Icon(Icons.lock_outline, color: Colors.grey),
+                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
                         ),
-                        obscureText: true,
+                        obscureText: _obscurePassword,
                         validator: (value) => 
                             value == null || value.length < 6 ? 'Password must be at least 6 chars' : null,
                       ),
@@ -214,12 +221,29 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     const SizedBox(height: 16),
-                    authProvider.isLoading
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton(
-                            onPressed: _handleLogin,
-                            child: Text(_isAdminMode ? 'Admin Log In' : 'Log In'),
-                          ),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: authProvider.isLoading ? null : _handleLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF904CC1),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          elevation: 2,
+                        ),
+                        child: authProvider.isLoading
+                            ? const SizedBox(
+                                height: 20, 
+                                width: 20, 
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                              )
+                            : Text(
+                                _isAdminMode ? 'Admin Log In' : 'Log In',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     if (!_isAdminMode)
                       Row(
@@ -252,6 +276,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -275,26 +301,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
-
-class HeaderClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    Path path = Path();
-    path.lineTo(0, size.height * 0.7);
-    path.quadraticBezierTo(
-      size.width * 0.3, size.height,
-      size.width * 0.7, size.height * 0.7,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.9, size.height * 0.5,
-      size.width, size.height * 0.6,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

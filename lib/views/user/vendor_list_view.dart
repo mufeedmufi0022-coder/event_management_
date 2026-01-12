@@ -5,6 +5,8 @@ import '../../providers/user_provider.dart';
 import '../../models/booking_model.dart';
 import '../../models/vendor_model.dart';
 import 'vendor_details_view.dart';
+import '../../core/utils/image_helper.dart';
+import '../../providers/locale_provider.dart';
 
 class VendorListView extends StatelessWidget {
   const VendorListView({super.key});
@@ -12,18 +14,48 @@ class VendorListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
+    final lp = context.watch<LocaleProvider>();
     final vendors = userProvider.approvedVendors;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F8),
       appBar: AppBar(
-        title: const Text('Discover Vendors'),
+        centerTitle: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              lp.get('Discover Vendors', 'വെണ്ടർമാരെ കണ്ടെത്തുക'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Row(
+              children: [
+                const Icon(Icons.location_on, size: 12, color: Color(0xFF904CC1)),
+                const SizedBox(width: 4),
+                Text(
+                  context.watch<AuthProvider>().userModel?.currentAddress ?? lp.get('Locating...', 'തിരയുന്നു...'),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.normal),
+                ),
+              ],
+            ),
+          ],
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          PopupMenuButton<Locale>(
+            icon: const Icon(Icons.language_rounded, color: Color(0xFF904CC1)),
+            onSelected: lp.setLocale,
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: Locale('en'), child: Text('English')),
+              const PopupMenuItem(value: Locale('ml'), child: Text('മലയാളം')),
+            ],
+          ),
+        ],
       ),
       body: vendors.isEmpty
-          ? const Center(child: Text('No approved vendors yet.'))
+          ? Center(child: Text(lp.get('No approved vendors yet.', 'വെണ്ടർമാരെ ലഭ്യമല്ല.')))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: vendors.length,
@@ -45,12 +77,11 @@ class VendorListView extends StatelessWidget {
                         if (vendor.logoUrl.isNotEmpty)
                           ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                            child: Image.network(
+                            child: ImageHelper.displayImage(
                               vendor.logoUrl,
                               height: 150,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(height: 150, color: Colors.grey[300]),
                             ),
                           ),
                         Padding(
@@ -103,45 +134,4 @@ class VendorListView extends StatelessWidget {
     );
   }
 
-  void _showBookingDialog(BuildContext context, VendorModel vendor) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final events = userProvider.myEvents;
-
-    if (events.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please create an event first.')),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Book ${vendor.businessName}'),
-        content: const Text('Select an event to book this vendor for:'),
-        actions: events.map((event) {
-          return TextButton(
-            onPressed: () async {
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-              final booking = BookingModel(
-                bookingId: '',
-                eventId: event.eventId,
-                vendorId: vendor.vendorId,
-                userId: authProvider.userModel!.uid,
-                status: 'pending',
-              );
-              await userProvider.sendBookingRequest(booking);
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Booking request sent!')),
-                );
-              }
-            },
-            child: Text(event.eventName),
-          );
-        }).toList(),
-      ),
-    );
   }
-}

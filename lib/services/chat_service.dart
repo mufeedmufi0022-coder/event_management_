@@ -6,11 +6,14 @@ class ChatService {
 
   // Get or create a chat between two users
   Future<String> getOrCreateChat(String userId, String otherId) async {
-    // Stage 2 Rule: Chat opens only after booking request
     // We should verify if a booking exists between these two.
-    final bookingExists = await _checkIfBookingExists(userId, otherId);
-    if (!bookingExists) {
-      throw Exception('Chat allowed only after booking request.');
+    final isAdminChat = userId == 'admin@event.com' || otherId == 'admin@event.com';
+    
+    if (!isAdminChat) {
+      final bookingExists = await _checkIfBookingExists(userId, otherId);
+      if (!bookingExists) {
+        throw Exception('Chat allowed only after booking request.');
+      }
     }
 
     List<String> ids = [userId, otherId];
@@ -93,7 +96,8 @@ class ChatService {
   // Send a message
   Future<void> sendMessage(String chatId, MessageModel message) async {
     // Verify if still allowed to chat
-    if (await isChatReadOnly(chatId)) {
+    final isAdminChat = chatId.contains('admin@event.com');
+    if (!isAdminChat && await isChatReadOnly(chatId)) {
       throw Exception('Chat is read-only for this booking.');
     }
 

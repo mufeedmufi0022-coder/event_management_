@@ -1,9 +1,12 @@
+import 'vendor_model.dart';
+
 class UserModel {
   final String uid;
   final String name;
   final String email;
   final String role; // 'user', 'vendor', 'admin'
   final String status; // 'pending', 'approved', 'blocked'
+  final bool isActive;
 
   // Vendor specific fields (Optional)
   final String? businessName;
@@ -13,6 +16,11 @@ class UserModel {
   final String? description;
   final String? contactNumber;
   final List<String> images;
+  final String? logoUrl;
+  final List<ProductModel> products;
+  final String? currentAddress;
+  final double? latitude;
+  final double? longitude;
 
   UserModel({
     required this.uid,
@@ -20,6 +28,7 @@ class UserModel {
     required this.email,
     required this.role,
     required this.status,
+    this.isActive = true,
     this.businessName,
     this.serviceType,
     this.location,
@@ -27,22 +36,39 @@ class UserModel {
     this.description,
     this.contactNumber,
     this.images = const [],
+    this.logoUrl,
+    this.products = const [],
+    this.currentAddress,
+    this.latitude,
+    this.longitude,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data, String id) {
     return UserModel(
       uid: id,
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
-      role: data['role'] ?? 'user',
-      status: data['status'] ?? 'pending',
-      businessName: data['businessName'],
-      serviceType: data['serviceType'],
-      location: data['location'],
-      priceRange: data['priceRange'],
-      description: data['description'],
-      contactNumber: data['contactNumber'],
-      images: List<String>.from(data['images'] ?? []),
+      name: data['name']?.toString() ?? '',
+      email: data['email']?.toString() ?? '',
+      role: data['role']?.toString().toLowerCase().trim() ?? 
+            (data['businessName'] != null ? 'vendor' : 'user'),
+      status: data['status']?.toString().toLowerCase().trim() ?? 'pending',
+      isActive: data['isActive'] ?? true,
+      businessName: data['businessName']?.toString(),
+      serviceType: data['serviceType']?.toString(),
+      location: data['location']?.toString(),
+      priceRange: data['priceRange']?.toString(),
+      description: data['description']?.toString(),
+      contactNumber: data['contactNumber']?.toString(),
+      images: data['images'] is List ? List<String>.from(data['images']) : [],
+      logoUrl: data['logoUrl']?.toString(),
+      products: data['products'] is List 
+          ? (data['products'] as List)
+              .where((p) => p is Map)
+              .map((p) => ProductModel.fromMap(Map<String, dynamic>.from(p)))
+              .toList()
+          : [],
+      currentAddress: data['currentAddress']?.toString(),
+      latitude: data['latitude'] != null ? (data['latitude'] as num).toDouble() : null,
+      longitude: data['longitude'] != null ? (data['longitude'] as num).toDouble() : null,
     );
   }
 
@@ -52,6 +78,7 @@ class UserModel {
       'email': email,
       'role': role,
       'status': status,
+      'isActive': isActive,
       'businessName': businessName,
       'serviceType': serviceType,
       'location': location,
@@ -59,6 +86,11 @@ class UserModel {
       'description': description,
       'contactNumber': contactNumber,
       'images': images,
+      'logoUrl': logoUrl,
+      'products': products.map((p) => p.toMap()).toList(),
+      'currentAddress': currentAddress,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 }

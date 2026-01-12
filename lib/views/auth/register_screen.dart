@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import 'login_screen.dart';
+import '../../core/utils/header_clipper.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,6 +16,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String _selectedRole = 'user'; // Default role
+  bool _obscurePassword = true;
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
@@ -83,7 +84,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 16),
                     _buildInputField(_emailController, 'Email', Icons.email_outlined),
                     const SizedBox(height: 16),
-                    _buildInputField(_passwordController, 'Password', Icons.lock_outline, obscure: true),
+                    _buildInputField(
+                      _passwordController, 
+                      'Password', 
+                      Icons.lock_outline, 
+                      obscure: _obscurePassword,
+                      isPasswordField: true,
+                      onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
                     const SizedBox(height: 24),
                     const Text('Register as:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                     Row(
@@ -107,12 +115,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    authProvider.isLoading
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton(
-                            onPressed: _register,
-                            child: const Text('Register'),
-                          ),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: authProvider.isLoading ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF904CC1),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          elevation: 2,
+                        ),
+                        child: authProvider.isLoading
+                            ? const SizedBox(
+                                height: 20, 
+                                width: 20, 
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                              )
+                            : const Text(
+                                'Register',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -124,7 +149,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildInputField(TextEditingController controller, String hint, IconData icon, {bool obscure = false}) {
+  Widget _buildInputField(
+    TextEditingController controller, 
+    String hint, 
+    IconData icon, 
+    {bool obscure = false, 
+    bool isPasswordField = false,
+    VoidCallback? onToggleVisibility}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -143,6 +174,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         decoration: InputDecoration(
           hintText: hint,
           prefixIcon: Icon(icon, color: Colors.grey),
+          suffixIcon: isPasswordField 
+            ? IconButton(
+                icon: Icon(
+                  obscure ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey,
+                ),
+                onPressed: onToggleVisibility,
+              )
+            : null,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
@@ -150,6 +190,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         validator: (value) => value == null || value.isEmpty ? 'Please enter $hint' : null,
       ),
     );
+  }
+
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

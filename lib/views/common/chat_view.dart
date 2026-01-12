@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../models/chat_model.dart';
 
 class ChatListView extends StatelessWidget {
@@ -46,12 +47,19 @@ class ChatListView extends StatelessWidget {
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final chat = snapshot.data![index];
+              final otherId = chat.participants.firstWhere((id) => id != user.uid, orElse: () => 'Unknown');
+              final isSupport = otherId == 'admin@event.com';
+              final lp = context.watch<LocaleProvider>();
+
               return ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFF904CC1),
-                  child: Icon(Icons.person, color: Colors.white),
+                leading: CircleAvatar(
+                  backgroundColor: isSupport ? Colors.orange : const Color(0xFF904CC1),
+                  child: Icon(isSupport ? Icons.headset_mic : Icons.person, color: Colors.white),
                 ),
-                title: const Text('Conversation', style: TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(
+                  isSupport ? lp.get('Support Chat', 'സപ്പോർട്ട് ചാറ്റ്') : otherId.split('@')[0], 
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 subtitle: Text(chat.lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
                 trailing: Text(
                   '${chat.lastTimestamp.hour}:${chat.lastTimestamp.minute.toString().padLeft(2, '0')}',

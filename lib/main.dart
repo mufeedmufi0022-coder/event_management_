@@ -6,6 +6,7 @@ import 'providers/admin_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/vendor_provider.dart';
 import 'providers/chat_provider.dart';
+import 'providers/locale_provider.dart';
 import 'views/root_wrapper.dart';
 import 'views/splash_screen.dart';
 import 'services/auth_service.dart';
@@ -28,6 +29,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => VendorProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
       child: const MyApp(),
     ),
@@ -40,7 +42,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Event Management MVP',
+      title: 'PLANIFY',
       theme: AppThemes.lightTheme,
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,

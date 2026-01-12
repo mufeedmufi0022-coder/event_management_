@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../common/chat_view.dart';
+import '../../core/utils/image_helper.dart';
 
 class VendorDetailsView extends StatelessWidget {
   final VendorModel vendor;
@@ -25,9 +26,7 @@ class VendorDetailsView extends StatelessWidget {
             expandedHeight: 250,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: vendor.logoUrl.isNotEmpty 
-                ? Image.network(vendor.logoUrl, fit: BoxFit.cover)
-                : Container(color: const Color(0xFF904CC1), child: const Icon(Icons.business, size: 80, color: Colors.white)),
+              background: ImageHelper.displayImage(vendor.logoUrl, fit: BoxFit.cover),
             ),
           ),
           SliverToBoxAdapter(
@@ -98,7 +97,7 @@ class VendorDetailsView extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(p.imageUrl, fit: BoxFit.cover, width: double.infinity))),
+                                Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)), child: ImageHelper.displayImage(p.imageUrl, fit: BoxFit.cover, width: double.infinity))),
                                 Padding(
                                   padding: const EdgeInsets.all(12),
                                   child: Column(
@@ -140,42 +139,90 @@ class VendorDetailsView extends StatelessWidget {
 
   Widget _buildSectionTitle(String title) => Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
 
-  void _showBookingDialog(BuildContext context, VendorModel vendor, UserProvider userProvider, String userId) {
-    final events = userProvider.myEvents;
-    if (events.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create an event first!')));
-      return;
-    }
+  void _showBookingDialog(BuildContext context, VendorModel vendor, UserProvider userProvider, String userId) async {
+    DateTime? selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF904CC1),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
 
+    if (selectedDate == null) return;
+
+    if (!context.mounted) return;
+
+    final occasionController = TextEditingController();
+    
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 24,
+          right: 24,
+          top: 24,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Select Event', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            ...events.map((e) => ListTile(
-              title: Text(e.eventName),
-              subtitle: Text(e.date),
-              onTap: () async {
+            const Text('Complete Booking', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('Selected Date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}', 
+                style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            TextField(
+              controller: occasionController,
+              decoration: InputDecoration(
+                labelText: 'What\'s the occasion?',
+                hintText: 'e.g. Wedding, Birthday, Corporate Event',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () async {
                 final booking = BookingModel(
                   bookingId: '',
-                  eventId: e.eventId,
                   vendorId: vendor.vendorId,
                   userId: userId,
-                  status: 'pending',
+                  status: 'requested',
+                  bookingDate: selectedDate,
+                  occasion: occasionController.text.trim().isEmpty ? 'General' : occasionController.text.trim(),
                 );
                 await userProvider.sendBookingRequest(booking);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request sent to vendor!')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Booking request sent successfully!'),
+                      backgroundColor: Colors.green,
+                    )
+                  );
                 }
               },
-            )),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF904CC1),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Confirm Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

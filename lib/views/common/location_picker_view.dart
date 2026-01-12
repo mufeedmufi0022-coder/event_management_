@@ -54,7 +54,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=$query&limit=5'),
+        Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=$query&limit=10&viewbox=74.8,12.8,77.3,8.2&bounded=0'),
         headers: {'User-Agent': 'EventMVP_App'},
       );
 

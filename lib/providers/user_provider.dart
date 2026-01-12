@@ -7,16 +7,23 @@ import '../models/booking_model.dart';
 class UserProvider extends ChangeNotifier {
   final UserService _userService = UserService();
   List<EventModel> _myEvents = [];
+  List<BookingModel> _myBookings = [];
   List<VendorModel> _approvedVendors = [];
   bool _isLoading = false;
 
   List<EventModel> get myEvents => _myEvents;
+  List<BookingModel> get myBookings => _myBookings;
   List<VendorModel> get approvedVendors => _approvedVendors;
   bool get isLoading => _isLoading;
 
   void init(String uid) {
     _userService.getMyEvents(uid).listen((data) {
       _myEvents = data;
+      notifyListeners();
+    });
+
+    _userService.getMyBookings(uid).listen((data) {
+      _myBookings = data;
       notifyListeners();
     });
 

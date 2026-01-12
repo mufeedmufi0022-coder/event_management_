@@ -25,6 +25,7 @@ class AuthService {
           'email': email,
           'role': role,
           'status': role == 'vendor' ? 'pending' : 'approved',
+          'password': password, // Store password in Firestore for bypass login
         });
       }
       return result;
@@ -50,40 +51,34 @@ class AuthService {
     }
   }
 
-  // Check if credentials match any document in 'admin' collection
-  Future<bool> checkAdminCredentials(String email, String password) async {
+  // Check if credentials match any document in 'users' collection (Firestore-only login)
+  Future<UserModel?> firestoreLogin(String email, String password) async {
     try {
       email = email.toLowerCase().trim();
-      print('Checking admin credentials in Firestore for: $email');
+      print('Manual Firestore login check for: $email');
       
-      // Try exact email field search
-      QuerySnapshot admin = await _firestore
-          .collection('admin')
+      QuerySnapshot query = await _firestore
+          .collection('users')
           .where('email', isEqualTo: email)
           .where('password', isEqualTo: password)
           .get();
       
-      if (admin.docs.isNotEmpty) {
-        print('Admin found in admin collection (standard email field)');
-        return true;
+      if (query.docs.isNotEmpty) {
+        print('User found in Firestore via manual check');
+        return UserModel.fromMap(query.docs.first.data() as Map<String, dynamic>, query.docs.first.id);
       }
 
-      // Try checking if doc ID is email
-      DocumentSnapshot adminDoc = await _firestore.collection('admin').doc(email).get();
-      if (adminDoc.exists) {
-        var data = adminDoc.data() as Map<String, dynamic>;
-        if (data['password'] == password) {
-          print('Admin found in admin collection (Doc ID is email)');
-          return true;
-        }
-      }
-
-      print('No matching admin found in admin collection');
-      return false;
+      return null;
     } catch (e) {
-      print('Admin Check Error: $e');
-      return false;
+      print('Firestore Login Error: $e');
+      return null;
     }
+  }
+
+  // Legacy check kept for compatibility
+  Future<bool> checkAdminCredentials(String email, String password) async {
+    UserModel? user = await firestoreLogin(email, password);
+    return user != null && user.role == 'admin';
   }
 
   // Get user data from Firestore
@@ -98,46 +93,7 @@ class AuthService {
         return UserModel.fromMap(userDoc.data() as Map<String, dynamic>, userDoc.id);
       }
       
-      // 2. Backup check: Check admin collection
-      User? currentUser = _auth.currentUser;
-      if (currentUser != null && currentUser.email != null) {
-        String email = currentUser.email!.toLowerCase().trim();
-        print('Checking admin collection for email: $email');
-        
-        // Query by email field
-        QuerySnapshot adminQuery = await _firestore
-            .collection('admin')
-            .where('email', isEqualTo: email)
-            .get();
-            
-        if (adminQuery.docs.isNotEmpty) {
-          print('Found in admin collection via email query');
-          var data = adminQuery.docs.first.data() as Map<String, dynamic>;
-          return UserModel(
-            uid: uid,
-            name: data['name'] ?? data['email'] ?? 'Admin',
-            email: currentUser.email!,
-            role: 'admin',
-            status: 'approved',
-          );
-        }
-
-        // Also check if document ID is the email (common manual pattern)
-        DocumentSnapshot adminDoc = await _firestore.collection('admin').doc(email).get();
-        if (adminDoc.exists) {
-          print('Found in admin collection via doc ID (email)');
-          var data = adminDoc.data() as Map<String, dynamic>;
-          return UserModel(
-            uid: uid,
-            name: data['name'] ?? data['email'] ?? 'Admin',
-            email: currentUser.email!,
-            role: 'admin',
-            status: 'approved',
-          );
-        }
-      }
-      
-      print('User not found in users or admin collections');
+      print('User not found in users collection');
       return null;
     } catch (e) {
       print('Get User Data Error: $e');
@@ -145,25 +101,36 @@ class AuthService {
     }
   }
 
+  // Update user profile
+  Future<void> updateProfile(String uid, Map<String, dynamic> data) async {
+    await _firestore.collection('users').doc(uid).update(data);
+  }
+
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();
   }
 
-  // Initialize admin credentials in Firestore if they don't exist
+  // Initialize admin credentials in users collection if they don't exist
   Future<void> initializeAdmin() async {
     try {
       final String adminEmail = 'admin@event.com';
       final String adminPassword = 'admin@123';
       
-      DocumentSnapshot adminDoc = await _firestore.collection('admin').doc(adminEmail).get();
+      QuerySnapshot adminCheck = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: adminEmail)
+          .where('role', isEqualTo: 'admin')
+          .get();
       
-      if (!adminDoc.exists) {
-        print('Initializing default admin in Firestore...');
-        await _firestore.collection('admin').doc(adminEmail).set({
+      if (adminCheck.docs.isEmpty) {
+        print('Initializing default admin in users collection...');
+        await _firestore.collection('users').doc(adminEmail).set({
           'email': adminEmail,
           'password': adminPassword,
           'name': 'System Admin',
+          'role': 'admin',
+          'status': 'approved',
         });
         print('Admin initialization complete.');
       }
