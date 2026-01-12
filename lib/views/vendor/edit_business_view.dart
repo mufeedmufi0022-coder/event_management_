@@ -136,7 +136,12 @@ class _EditBusinessViewState extends State<EditBusinessView> {
   void _editProduct({ProductModel? product, int? index}) {
     String name = product?.name ?? '';
     String price = product?.price ?? '';
-    String? imageUrl = product?.imageUrl;
+    List<String> images = product?.images != null ? List.from(product!.images) : [];
+    String? priceType = product?.priceType ?? 'fixed';
+    int? capacity = product?.capacity;
+    String? mobileNumber = product?.mobileNumber;
+    String? location = product?.location;
+    String? subType = product?.subType;
 
     showModalBottomSheet(
       context: context,
@@ -154,104 +159,176 @@ class _EditBusinessViewState extends State<EditBusinessView> {
             right: 24,
             bottom: MediaQuery.of(context).viewInsets.bottom + 32,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    product == null ? 'Add Product/Service' : 'Edit Product/Service',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: GestureDetector(
-                  onTap: () async {
-                    final source = await _showImageSourceDialog();
-                    if (source == null) return;
-
-                    final XFile? image = await _picker.pickImage(
-                      source: source,
-                      imageQuality: 25,
-                      maxWidth: 500,
-                      maxHeight: 500,
-                    );
-                    if (image != null) {
-                      setDialogState(() => _isUploading = true);
-                      String? url = await _storageService.uploadImage('products', File(image.path));
-                      setDialogState(() {
-                        imageUrl = url;
-                        _isUploading = false;
-                      });
-                    }
-                  },
-                  child: Container(
-                    height: 140,
-                    width: 140,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F4F8),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFF904CC1).withOpacity(0.1)),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      product == null ? 'Add Product/Service' : 'Edit Product/Service',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                    child: Stack(
-                      children: [
-                        if (imageUrl != null)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: ImageHelper.displayImage(imageUrl!, fit: BoxFit.cover, width: 140, height: 140),
-                          )
-                        else
-                          const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                Icon(Icons.add_a_photo_outlined, size: 32, color: Color(0xFF904CC1)),
-                                SizedBox(height: 8),
-                                Text('Add Photo', style: TextStyle(color: Color(0xFF904CC1), fontSize: 12, fontWeight: FontWeight.bold)),
-                              ],
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text('Images (Select multiple)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: images.length + 1,
+                    itemBuilder: (context, idx) {
+                      if (idx == images.length) {
+                        return GestureDetector(
+                          onTap: () async {
+                            final source = await _showImageSourceDialog();
+                            if (source == null) return;
+                            final XFile? image = await _picker.pickImage(source: source, imageQuality: 25);
+                            if (image != null) {
+                              setDialogState(() => _isUploading = true);
+                              String? url = await _storageService.uploadImage('products', File(image.path));
+                              setDialogState(() {
+                                if (url != null) images.add(url);
+                                _isUploading = false;
+                              });
+                            }
+                          },
+                          child: Container(
+                            width: 100,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F4F8),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFF904CC1).withOpacity(0.1)),
+                            ),
+                            child: const Icon(Icons.add_a_photo_outlined, color: Color(0xFF904CC1)),
+                          ),
+                        );
+                      }
+                      return Stack(
+                        children: [
+                          Container(
+                            width: 100,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              image: DecorationImage(
+                                image: ImageHelper.getImageProvider(images[idx]) ?? const NetworkImage('https://via.placeholder.com/150'), 
+                                fit: BoxFit.cover
+                              ),
                             ),
                           ),
-                        if (_isUploading)
-                          const Center(child: CircularProgressIndicator()),
-                      ],
-                    ),
+                          Positioned(
+                            top: 4,
+                            right: 16,
+                            child: GestureDetector(
+                              onTap: () => setDialogState(() => images.removeAt(idx)),
+                              child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white)),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              _buildTextFieldInPopup('Item Name', (v) => name = v, Icons.shopping_bag_outlined, initialValue: name),
+                if (_isUploading) const Padding(padding: EdgeInsets.all(8.0), child: Center(child: CircularProgressIndicator())),
+                const SizedBox(height: 24),
+                _buildTextFieldInPopup('Item Name', (v) => name = v, Icons.shopping_bag_outlined, initialValue: name),
                 const SizedBox(height: 16),
-              _buildTextFieldInPopup('Price (₹)', (v) => price = v, Icons.payments_outlined, keyboardType: TextInputType.number, initialValue: price),
-                const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: imageUrl != null && name.isNotEmpty ? () {
-                  setState(() {
-                      if (product == null) {
-                        _products.add(ProductModel(imageUrl: imageUrl!, price: price, name: name));
-                      } else {
-                        _products[index!] = ProductModel(imageUrl: imageUrl!, price: price, name: name);
-                      }
-                  });
-                  Navigator.pop(context);
-                } : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF904CC1),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
+                Row(
+                  children: [
+                    Expanded(child: _buildTextFieldInPopup('Price (₹)', (v) => price = v, Icons.payments_outlined, keyboardType: TextInputType.number, initialValue: price)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: priceType,
+                        decoration: _inputDecoration('Pricing Type', Icons.sell_outlined),
+                        items: const [
+                          DropdownMenuItem(value: 'fixed', child: Text('Fixed')),
+                          DropdownMenuItem(value: 'per_person', child: Text('Per Person')),
+                        ],
+                        onChanged: (v) => setDialogState(() => priceType = v),
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(product == null ? 'Add Product' : 'Update Product', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: _buildTextFieldInPopup('Capacity', (v) => capacity = int.tryParse(v), Icons.people_outline, keyboardType: TextInputType.number, initialValue: capacity?.toString() ?? '')),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildTextFieldInPopup('Mobile', (v) => mobileNumber = v, Icons.phone_android_outlined, keyboardType: TextInputType.phone, initialValue: mobileNumber ?? '')),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildTextFieldInPopup('Specific Location', (v) => location = v, Icons.location_on_outlined, initialValue: location ?? ''),
+                const SizedBox(height: 16),
+                if (_selectedType == 'Vehicle')
+                  DropdownButtonFormField<String>(
+                    value: subType,
+                    decoration: _inputDecoration('Car Class', Icons.directions_car_outlined),
+                    items: const [
+                      DropdownMenuItem(value: 'Premium', child: Text('Premium')),
+                      DropdownMenuItem(value: 'Medium', child: Text('Medium')),
+                      DropdownMenuItem(value: 'Normal', child: Text('Normal')),
+                    ],
+                    onChanged: (v) => setDialogState(() => subType = v),
+                  ),
+                if (_selectedType == 'Food' || _selectedType == 'Catering')
+                  DropdownButtonFormField<String>(
+                    value: subType,
+                    decoration: _inputDecoration('Service Type', Icons.restaurant_outlined),
+                    items: const [
+                      DropdownMenuItem(value: 'Buffet', child: Text('Buffet')),
+                      DropdownMenuItem(value: 'Normal', child: Text('Normal')),
+                    ],
+                    onChanged: (v) => setDialogState(() => subType = v),
+                  ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: images.isNotEmpty && name.isNotEmpty ? () {
+                    setState(() {
+                      final newProduct = ProductModel(
+                        images: images,
+                        price: price,
+                        name: name,
+                        capacity: capacity,
+                        mobileNumber: mobileNumber,
+                        location: location,
+                        priceType: priceType,
+                        categoryType: _selectedType,
+                        subType: subType,
+                        blockedDates: product?.blockedDates ?? [],
+                        bookedDates: product?.bookedDates ?? [],
+                        ratings: product?.ratings ?? [],
+                      );
+                      if (product == null) {
+                        _products.add(newProduct);
+                      } else {
+                        _products[index!] = newProduct;
+                      }
+                    });
+                    Navigator.pop(context);
+                  } : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF904CC1),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: Text(product == null ? 'Add Product' : 'Update Product', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -399,7 +476,22 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                                 children: [
                                   ClipRRect(
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), 
-                                    child: ImageHelper.displayImage(p.imageUrl, fit: BoxFit.cover, width: double.infinity)
+                                    child: ImageHelper.displayImage(p.images.isNotEmpty ? p.images.first : '', fit: BoxFit.cover, width: double.infinity)
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    left: 4,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.star, size: 10, color: Colors.amber),
+                                          const SizedBox(width: 2),
+                                          Text(p.averageRating.toStringAsFixed(1), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                   Positioned(
                                     top: 4,
@@ -433,7 +525,10 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                               padding: const EdgeInsets.all(4.0),
                               child: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                             ),
-                            Text('₹${p.price}', style: const TextStyle(color: Color(0xFF904CC1), fontSize: 11, fontWeight: FontWeight.bold)),
+                            Text(
+                              p.priceType == 'per_person' ? '₹${p.price}/person' : '₹${p.price}',
+                              style: const TextStyle(color: Color(0xFF904CC1), fontSize: 11, fontWeight: FontWeight.bold)
+                            ),
                             const SizedBox(height: 4),
                           ],
                         ),

@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
-import '../../models/booking_model.dart';
 import '../../models/vendor_model.dart';
-import 'vendor_details_view.dart';
+import 'product_detail_view.dart';
 import '../../core/utils/image_helper.dart';
 import '../../providers/locale_provider.dart';
 
@@ -18,13 +17,26 @@ class VendorListView extends StatelessWidget {
     final lp = context.watch<LocaleProvider>();
     
     // Filter vendors if category is provided
-    final vendors = category == null 
+    final matchedVendors = category == null 
         ? userProvider.approvedVendors 
         : userProvider.approvedVendors.where((v) => 
             v.serviceType.toLowerCase().contains(category!.toLowerCase()) || 
             category == 'Others' ||
             category == 'മറ്റുള്ളവ'
           ).toList();
+
+    // Flatten to products
+    final List<Map<String, dynamic>> productsWithVendors = [];
+    for (var vendor in matchedVendors) {
+      for (var product in vendor.products) {
+        // Optional: Further filter products by sub-category if needed
+        // For now, since vendor is already matched by serviceType, all their products are relevant.
+        productsWithVendors.add({
+          'product': product,
+          'vendor': vendor,
+        });
+      }
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F8),
@@ -34,7 +46,7 @@ class VendorListView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              category ?? lp.get('Discover Vendors', 'വെണ്ടർമാരെ കണ്ടെത്തുക'),
+              category ?? lp.get('Discover Services', 'സേവനങ്ങൾ കണ്ടെത്തുക'),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Row(
@@ -56,95 +68,112 @@ class VendorListView extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        actions: [
-          PopupMenuButton<Locale>(
-            icon: const Icon(Icons.language_rounded, color: Color(0xFF904CC1)),
-            onSelected: lp.setLocale,
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: Locale('en'), child: Text('English')),
-              const PopupMenuItem(value: Locale('ml'), child: Text('മലയാളം')),
-            ],
-          ),
-        ],
       ),
-      body: vendors.isEmpty
-          ? Center(child: Text(lp.get('No approved vendors yet.', 'വെണ്ടർമാരെ ലഭ്യമല്ല.')))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: vendors.length,
+      body: productsWithVendors.isEmpty
+          ? Center(child: Text(lp.get('No services found in this category.', 'ഈ വിഭാഗത്തിൽ സേവനങ്ങളൊന്നും ലഭ്യമല്ല.')))
+          : GridView.builder(
+              padding: const EdgeInsets.all(20),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: productsWithVendors.length,
               itemBuilder: (context, index) {
-                final vendor = vendors[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 2,
-                  child: InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => VendorDetailsView(vendor: vendor)),
-                  ),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (vendor.logoUrl.isNotEmpty)
-                          ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                            child: ImageHelper.displayImage(
-                              vendor.logoUrl,
-                              height: 150,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    vendor.businessName.isNotEmpty ? vendor.businessName : 'Unnamed Business',
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    vendor.priceRange,
-                                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                vendor.serviceType,
-                                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      vendor.location,
-                                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+                final item = productsWithVendors[index];
+                final p = item['product'] as ProductModel;
+                final v = item['vendor'] as VendorModel;
+                
+                return _buildProductCard(context, p, v);
               },
             ),
     );
   }
 
+  Widget _buildProductCard(BuildContext context, ProductModel p, VendorModel v) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ProductDetailView(product: p, vendor: v)),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: ImageHelper.displayImage(
+                  p.images.isNotEmpty ? p.images.first : '',
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        p.averageRating.toStringAsFixed(1),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${p.ratings.length})',
+                        style: const TextStyle(color: Colors.grey, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '₹${p.price}',
+                        style: const TextStyle(
+                          color: Color(0xFF904CC1),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      if (p.priceType == 'per_person')
+                        const Text(
+                          '/person',
+                          style: TextStyle(color: Colors.grey, fontSize: 10),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+}

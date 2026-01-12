@@ -6,16 +6,11 @@ class ChatService {
 
   // Get or create a chat between two users
   Future<String> getOrCreateChat(String userId, String otherId) async {
-    // We should verify if a booking exists between these two.
-    final isAdminChat = userId == 'admin@event.com' || otherId == 'admin@event.com';
+    // Admin chat check: one of the participants is an admin
+    // Note: Admin ID in this system is 'admin@event.com'
+    // But we should also check the users collection for the 'role' if needed.
+    // However, the system initializes admin with docId 'admin@event.com'.
     
-    if (!isAdminChat) {
-      final bookingExists = await _checkIfBookingExists(userId, otherId);
-      if (!bookingExists) {
-        throw Exception('Chat allowed only after booking request.');
-      }
-    }
-
     List<String> ids = [userId, otherId];
     ids.sort();
     String chatId = ids.join('_');
@@ -27,6 +22,7 @@ class ChatService {
         'participants': ids,
         'lastMessage': '',
         'lastTimestamp': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
       });
     }
 
@@ -34,6 +30,7 @@ class ChatService {
   }
 
   Future<bool> _checkIfBookingExists(String userId, String otherId) async {
+    // Keep this for UI markers if needed, but no longer blocking chat.
     // Check bookings for both ways (User->Vendor or Vendor->User context)
     final snapshot = await _firestore.collection('bookings')
         .where('userId', whereIn: [userId, otherId])
@@ -45,27 +42,37 @@ class ChatService {
 
   // Check if chat is read only (booking completed or cancelled)
   Future<bool> isChatReadOnly(String chatId) async {
+    // Admin chats are never read-only
+    if (chatId.contains('admin@event.com')) return false;
+
     List<String> ids = chatId.split('_');
     if (ids.length != 2) return false;
 
+    // We check if there are ANY active bookings between these two.
+    // In our system, bookings are 'isActive=true' by default.
     final snapshot = await _firestore.collection('bookings')
         .where('userId', whereIn: ids)
         .where('vendorId', whereIn: ids)
         .where('isActive', isEqualTo: true)
         .get();
     
-    if (snapshot.docs.isEmpty) return true;
+    // If no booking exists, it's an inquiry chat, so NOT read-only.
+    if (snapshot.docs.isEmpty) return false;
 
-    // If all related active bookings are completed or cancelled
-    bool allClosed = true;
+    // If bookings exist, we check if they are all closed.
+    bool hasOpenBooking = false;
     for (var doc in snapshot.docs) {
       String status = doc['status'] ?? '';
+      // Statuses like 'requested', 'quotation', 'accepted' are open.
       if (status != 'completed' && status != 'cancelled') {
-        allClosed = false;
+        hasOpenBooking = true;
         break;
       }
     }
-    return allClosed;
+
+    // If it has at least one open booking, it's NOT read-only.
+    // If all existing bookings are closed, then it's read-only.
+    return !hasOpenBooking;
   }
 
   // Get all chats for a user

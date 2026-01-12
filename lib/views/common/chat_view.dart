@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/locale_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/chat_model.dart';
 
 class ChatListView extends StatelessWidget {
@@ -51,28 +52,45 @@ class ChatListView extends StatelessWidget {
               final isSupport = otherId == 'admin@event.com';
               final lp = context.watch<LocaleProvider>();
 
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: isSupport ? Colors.orange : const Color(0xFF904CC1),
-                  child: Icon(isSupport ? Icons.headset_mic : Icons.person, color: Colors.white),
-                ),
-                title: Text(
-                  isSupport ? lp.get('Support Chat', 'സപ്പോർട്ട് ചാറ്റ്') : otherId.split('@')[0], 
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(chat.lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
-                trailing: Text(
-                  '${chat.lastTimestamp.hour}:${chat.lastTimestamp.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatView(chatId: chat.chatId),
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance.collection('users').doc(otherId).get(),
+                builder: (context, userSnapshot) {
+                  String name = isSupport ? lp.get('Support Chat', 'സപ്പോർട്ട് ചാറ്റ്') : otherId.split('@')[0];
+                  String? photoUrl;
+                  
+                  if (userSnapshot.hasData && userSnapshot.data?.exists == true) {
+                    final data = userSnapshot.data!.data() as Map<String, dynamic>;
+                    name = data['businessName'] ?? data['name'] ?? name;
+                    photoUrl = data['logoUrl'];
+                  }
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: isSupport ? Colors.orange : const Color(0xFF904CC1),
+                      backgroundImage: photoUrl != null && photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                      child: (photoUrl == null || photoUrl.isEmpty) 
+                          ? Icon(isSupport ? Icons.headset_mic : Icons.person, color: Colors.white)
+                          : null,
                     ),
+                    title: Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(chat.lastMessage.isEmpty ? 'Start a conversation' : chat.lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    trailing: Text(
+                      '${chat.lastTimestamp.hour}:${chat.lastTimestamp.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatView(chatId: chat.chatId, title: name),
+                        ),
+                      );
+                    },
                   );
-                },
+                }
               );
             },
           );
@@ -84,7 +102,8 @@ class ChatListView extends StatelessWidget {
 
 class ChatView extends StatefulWidget {
   final String chatId;
-  const ChatView({super.key, required this.chatId});
+  final String? title;
+  const ChatView({super.key, required this.chatId, this.title});
 
   @override
   State<ChatView> createState() => _ChatViewState();
@@ -101,7 +120,7 @@ class _ChatViewState extends State<ChatView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F8),
       appBar: AppBar(
-        title: const Text('Chat', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widget.title ?? 'Chat', style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,

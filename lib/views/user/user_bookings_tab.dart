@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../models/booking_model.dart';
+import '../../core/utils/image_helper.dart';
 
 class UserBookingsTab extends StatelessWidget {
   const UserBookingsTab({super.key});
@@ -61,11 +62,42 @@ class UserBookingsTab extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Booking ID: #${booking.bookingId.substring(0, 5)}', 
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                _buildStatusBadge(booking.status),
+                if (booking.productImage != null && booking.productImage!.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ImageHelper.displayImage(booking.productImage, width: 80, height: 80, fit: BoxFit.cover),
+                  )
+                else
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.image, color: Colors.grey),
+                  ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        booking.productName ?? 'Event Service',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('ID: #${booking.bookingId.substring(0, 5)}', 
+                              style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          _buildStatusBadge(booking.status),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
             const Divider(height: 24),
@@ -121,9 +153,6 @@ class UserBookingsTab extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text('Status: ${booking.status.toUpperCase()}', 
-                  style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold, fontSize: 12)),
             ],
           ],
         ),

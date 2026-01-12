@@ -9,6 +9,7 @@ import 'vendor_availability_tab.dart';
 import '../common/chat_view.dart';
 import '../user/vendor_details_view.dart';
 import '../../core/utils/image_helper.dart';
+import '../../providers/chat_provider.dart';
 
 class VendorDashboardView extends StatefulWidget {
   const VendorDashboardView({super.key});
@@ -191,22 +192,53 @@ class BookingRequestsTab extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 14, color: Color(0xFF904CC1)),
-                const SizedBox(width: 8),
-                Text(
-                  'Date: ${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.celebration, size: 14, color: Colors.orange),
-                const SizedBox(width: 8),
-                Text(
-                  'Occasion: ${booking.occasion ?? 'General'}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                if (booking.productImage != null && booking.productImage!.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ImageHelper.displayImage(booking.productImage, width: 70, height: 70, fit: BoxFit.cover),
+                  )
+                else
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.image, color: Colors.grey),
+                  ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        booking.productName ?? 'Service Ordered',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today, size: 12, color: Color(0xFF904CC1)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.celebration, size: 12, color: Colors.orange),
+                          const SizedBox(width: 4),
+                          Text(
+                            booking.occasion ?? 'General',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -403,6 +435,43 @@ class VendorProfileTab extends StatelessWidget {
               child: Text(
                 vendor?.description ?? 'No description provided.',
                 style: const TextStyle(color: Colors.grey, height: 1.5),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.headset_mic_outlined, color: Colors.blue),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Need Assistance?', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('Chat with system admin for support', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final user = Provider.of<AuthProvider>(context, listen: false).userModel;
+                      if (user != null) {
+                        final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+                        String chatId = await chatProvider.startChat(user.uid, 'admin@event.com');
+                        if (context.mounted) {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId, title: 'Admin Support')));
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                    child: const Text('Chat'),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),

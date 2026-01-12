@@ -12,6 +12,8 @@ import '../../models/booking_model.dart';
 import '../../models/log_model.dart';
 import 'vendor_detail_admin_view.dart';
 import '../common/chat_view.dart';
+import '../../providers/chat_provider.dart';
+import '../../core/utils/image_helper.dart';
 
 class AdminDashboardView extends StatefulWidget {
   const AdminDashboardView({super.key});
@@ -505,13 +507,34 @@ class PeopleListTab extends StatelessWidget {
                 ],
               ),
             ),
-            trailing: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded),
-              onSelected: (status) => adminProvider.updateStatus(person.uid, status),
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'approved', child: Text('Approve Account')),
-                const PopupMenuItem(value: 'pending', child: Text('Set Pending')),
-                const PopupMenuItem(value: 'blocked', child: Text('Block Access')),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF904CC1)),
+                  onPressed: () async {
+                    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+                    final admin = Provider.of<AuthProvider>(context, listen: false).userModel;
+                    if (admin != null) {
+                      String chatId = await chatProvider.startChat(admin.uid, person.uid);
+                      if (context.mounted) {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(
+                          chatId: chatId, 
+                          title: person.businessName?.isNotEmpty == true ? person.businessName : person.name
+                        )));
+                      }
+                    }
+                  },
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded),
+                  onSelected: (status) => adminProvider.updateStatus(person.uid, status),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'approved', child: Text('Approve Account')),
+                    const PopupMenuItem(value: 'pending', child: Text('Set Pending')),
+                    const PopupMenuItem(value: 'blocked', child: Text('Block Access')),
+                  ],
+                ),
               ],
             ),
             onTap: role == 'vendor' ? () {
@@ -569,16 +592,80 @@ class AdminBookingsTab extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: ListTile(
-            title: Text('Booking #${b.bookingId.substring(0, 5)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('User: ${b.userId.substring(0,5)} | Vendor: ${b.vendorId.substring(0,5)}\nStatus: ${b.status.toUpperCase()}'),
-            trailing: PopupMenuButton<String>(
-              icon: const Icon(Icons.settings_suggest_outlined),
-              onSelected: (val) => provider.manualOverrideBooking(b.bookingId, val),
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'accepted', child: Text('Force Accept')),
-                const PopupMenuItem(value: 'cancelled', child: Text('Force Cancel')),
-                const PopupMenuItem(value: 'completed', child: Text('Mark Complete')),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                if (b.productImage != null && b.productImage!.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ImageHelper.displayImage(b.productImage, width: 60, height: 60, fit: BoxFit.cover),
+                  )
+                else
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.image, color: Colors.grey, size: 20),
+                  ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        b.productName ?? 'Event Service',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'User: ${b.userId.substring(0, 5)} | Vendor: ${b.vendorId.substring(0, 5)}',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      Text(
+                        'Status: ${b.status.toUpperCase()}',
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF904CC1)),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.person_search_outlined, color: Colors.blue, size: 20),
+                      onPressed: () async {
+                        final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+                        final adminId = Provider.of<AuthProvider>(context, listen: false).userModel?.uid;
+                        if (adminId != null) {
+                          String chatId = await chatProvider.startChat(adminId, b.userId);
+                          if (context.mounted) Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId, title: 'Chat with User')));
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.storefront_outlined, color: Colors.purple, size: 20),
+                      onPressed: () async {
+                        final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+                        final adminId = Provider.of<AuthProvider>(context, listen: false).userModel?.uid;
+                        if (adminId != null) {
+                          String chatId = await chatProvider.startChat(adminId, b.vendorId);
+                          if (context.mounted) Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId, title: 'Chat with Vendor')));
+                        }
+                      },
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.settings_suggest_outlined, size: 20),
+                      onSelected: (val) => provider.manualOverrideBooking(b.bookingId, val),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'accepted', child: Text('Force Accept')),
+                        const PopupMenuItem(value: 'cancelled', child: Text('Force Cancel')),
+                        const PopupMenuItem(value: 'completed', child: Text('Mark Complete')),
+                      ],
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

@@ -1,28 +1,109 @@
-class ProductModel {
-  final String imageUrl;
-  final String price;
-  final String name;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-  ProductModel({
-    required this.imageUrl,
-    required this.price,
-    required this.name,
+class RatingModel {
+  final String userName;
+  final String comment;
+  final double stars;
+  final DateTime timestamp;
+
+  RatingModel({
+    required this.userName,
+    required this.comment,
+    required this.stars,
+    required this.timestamp,
   });
 
-  factory ProductModel.fromMap(Map<String, dynamic> data) {
-    return ProductModel(
-      imageUrl: data['imageUrl'] ?? '',
-      price: data['price'] ?? '',
-      name: data['name'] ?? '',
+  factory RatingModel.fromMap(Map<String, dynamic> data) {
+    return RatingModel(
+      userName: data['userName'] ?? '',
+      comment: data['comment'] ?? '',
+      stars: (data['stars'] ?? 0.0).toDouble(),
+      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'imageUrl': imageUrl,
+      'userName': userName,
+      'comment': comment,
+      'stars': stars,
+      'timestamp': timestamp,
+    };
+  }
+}
+
+class ProductModel {
+  final List<String> images;
+  final String price;
+  final String name;
+  final int? capacity;
+  final String? mobileNumber;
+  final String? location;
+  final String? priceType; // 'fixed', 'per_person'
+  final String? categoryType; // 'car', 'catering', etc.
+  final String? subType; // 'premium', 'buffet'
+  final List<String> blockedDates;
+  final List<String> bookedDates;
+  final List<RatingModel> ratings;
+
+  ProductModel({
+    required this.images,
+    required this.price,
+    required this.name,
+    this.capacity,
+    this.mobileNumber,
+    this.location,
+    this.priceType,
+    this.categoryType,
+    this.subType,
+    this.blockedDates = const [],
+    this.bookedDates = const [],
+    this.ratings = const [],
+  });
+
+  // Backward compatibility for single imageUrl
+  String get imageUrl => images.isNotEmpty ? images.first : '';
+
+  factory ProductModel.fromMap(Map<String, dynamic> data) {
+    return ProductModel(
+      images: List<String>.from(data['images'] ?? (data['imageUrl'] != null ? [data['imageUrl']] : [])),
+      price: data['price'] ?? '',
+      name: data['name'] ?? '',
+      capacity: data['capacity'],
+      mobileNumber: data['mobileNumber'],
+      location: data['location'],
+      priceType: data['priceType'],
+      categoryType: data['categoryType'],
+      subType: data['subType'],
+      blockedDates: List<String>.from(data['blockedDates'] ?? []),
+      bookedDates: List<String>.from(data['bookedDates'] ?? []),
+      ratings: (data['ratings'] as List? ?? [])
+          .map((r) => RatingModel.fromMap(r as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'images': images,
+      'imageUrl': imageUrl, // Keep for backward compatibility
       'price': price,
       'name': name,
+      'capacity': capacity,
+      'mobileNumber': mobileNumber,
+      'location': location,
+      'priceType': priceType,
+      'categoryType': categoryType,
+      'subType': subType,
+      'blockedDates': blockedDates,
+      'bookedDates': bookedDates,
+      'ratings': ratings.map((r) => r.toMap()).toList(),
     };
+  }
+
+  double get averageRating {
+    if (ratings.isEmpty) return 0.0;
+    return ratings.map((r) => r.stars).reduce((a, b) => a + b) / ratings.length;
   }
 }
 
@@ -92,5 +173,16 @@ class VendorModel {
       'availability': availability,
       'isActive': isActive,
     };
+  }
+
+  double get averageRating {
+    if (products.isEmpty) return 0.0;
+    final allRatings = products.expand((p) => p.ratings).toList();
+    if (allRatings.isEmpty) return 0.0;
+    return allRatings.map((r) => r.stars).reduce((a, b) => a + b) / allRatings.length;
+  }
+
+  int get reviewCount {
+    return products.fold(0, (sum, p) => sum + p.ratings.length);
   }
 }
