@@ -76,6 +76,7 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
                     context,
                     MaterialPageRoute(builder: (context) => const EditBusinessView()),
                   ),
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
                   child: const Text('Complete Profile'),
                 ),
               ],
@@ -134,7 +135,11 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red, 
+              foregroundColor: Colors.white,
+              minimumSize: const Size(0, 40),
+            ),
             child: const Text('Exit'),
           ),
         ],
@@ -320,6 +325,7 @@ class BookingRequestsTab extends StatelessWidget {
                 Navigator.pop(context);
               }
             },
+            style: ElevatedButton.styleFrom(minimumSize: const Size(0, 40)),
             child: const Text('Send'),
           ),
         ],
@@ -468,7 +474,11 @@ class VendorProfileTab extends StatelessWidget {
                         }
                       }
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue, 
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 40),
+                    ),
                     child: const Text('Chat'),
                   ),
                 ],
@@ -581,7 +591,11 @@ class VendorProfileTab extends StatelessWidget {
               Navigator.pop(context);
               Provider.of<AuthProvider>(context, listen: false).logout();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red, 
+              foregroundColor: Colors.white,
+              minimumSize: const Size(0, 40),
+            ),
             child: const Text('Logout'),
           ),
         ],

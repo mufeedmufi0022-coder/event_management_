@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/vendor_model.dart';
@@ -26,241 +27,278 @@ class _ProductDetailViewState extends State<ProductDetailView> {
   int _personCount = 1;
   final TextEditingController _occasionController = TextEditingController();
 
-  bool _isDateBlocked(DateTime date) {
-    String dateStr = DateFormat('yyyy-MM-dd').format(date);
-    return widget.product.blockedDates.contains(dateStr) || 
-           widget.product.bookedDates.contains(dateStr);
-  }
-
-  double get _totalPrice {
-    double basePrice = double.tryParse(widget.product.price) ?? 0.0;
-    if (widget.product.priceType == 'per_person') {
-      return basePrice * _personCount;
-    }
-    return basePrice;
-  }
-
   @override
   Widget build(BuildContext context) {
     final lp = context.watch<LocaleProvider>();
-    final userProvider = context.watch<UserProvider>();
+    final userProvider = context.read<UserProvider>();
     final authProvider = context.watch<AuthProvider>();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF1F4F8),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 350,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                children: [
-                  PageView.builder(
-                    itemCount: widget.product.images.length,
-                    onPageChanged: (index) => setState(() => _currentImageIndex = index),
-                    itemBuilder: (context, index) => ImageHelper.displayImage(
-                      widget.product.images[index],
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  if (widget.product.images.length > 1)
-                    Positioned(
-                      bottom: 20,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: widget.product.images.asMap().entries.map((entry) {
-                          return Container(
-                            width: 8,
-                            height: 8,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(_currentImageIndex == entry.key ? 0.9 : 0.4),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(widget.vendor.vendorId).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(appBar: AppBar(), body: const Center(child: Text("Error loading product")));
+        }
+        
+        // Use initial data while loading, or show loader if absolutely no data (rare since we passed widget.vendor)
+        VendorModel liveVendor = widget.vendor;
+        ProductModel liveProduct = widget.product;
+        
+        if (snapshot.hasData && snapshot.data!.exists) {
+           try {
+             liveVendor = VendorModel.fromMap(snapshot.data!.data() as Map<String, dynamic>, snapshot.data!.id);
+             liveProduct = liveVendor.products.firstWhere(
+               (p) => p.name == widget.product.name,
+               // If precise name match fails (unlikely), try to match by index if names changed? 
+               // For now, fallback to widget.product but with limited functionality
+               orElse: () => widget.product,
+             );
+           } catch (e) {
+             // Fallback to widget data if parsing fails
+           }
+        }
+
+        // Helper to check blocked dates using LIVE data
+        bool isDateBlocked(DateTime date) {
+          final dateStr = DateFormat('yyyy-MM-dd').format(date);
+          
+          // A. Check Global Vendor Availability (Store Closed)
+          if (liveVendor.availability[dateStr] == 'blocked') return true;
+
+          // B. Check Product Specific Blocked Dates
+          return liveProduct.blockedDates.contains(dateStr) || 
+                 liveProduct.bookedDates.contains(dateStr);
+        }
+
+        // Auto-deselect if the selected date became blocked
+        if (_selectedDate != null && isDateBlocked(_selectedDate!)) {
+           // We schedule this to run after build to avoid 'setState during build' error
+           WidgetsBinding.instance.addPostFrameCallback((_) {
+             if (mounted) setState(() => _selectedDate = null);
+           });
+        }
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF1F4F8),
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 350,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Stack(
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(widget.product.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.star, color: Colors.amber, size: 20),
-                                const SizedBox(width: 4),
-                                Text(
-                                  widget.product.averageRating.toStringAsFixed(1),
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      PageView.builder(
+                        itemCount: liveProduct.images.length,
+                        onPageChanged: (index) => setState(() => _currentImageIndex = index),
+                        itemBuilder: (context, index) => ImageHelper.displayImage(
+                          liveProduct.images[index],
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      if (liveProduct.images.length > 1)
+                        Positioned(
+                          bottom: 20,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: liveProduct.images.asMap().entries.map((entry) {
+                              return Container(
+                                width: 8,
+                                height: 8,
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(_currentImageIndex == entry.key ? 0.9 : 0.4),
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '(${widget.product.ratings.length} reviews)',
-                                  style: const TextStyle(color: Colors.grey),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(liveProduct.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber, size: 20),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      liveProduct.averageRating.toStringAsFixed(1),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '(${liveProduct.ratings.length} reviews)',
+                                      style: const TextStyle(color: Colors.grey),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '₹${widget.product.price}',
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF904CC1)),
                           ),
-                          Text(
-                            widget.product.priceType == 'per_person' ? 'per person' : 'fixed price',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '₹${liveProduct.price}',
+                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF904CC1)),
+                              ),
+                              Text(
+                                liveProduct.priceType == 'per_person' ? 'per person' : 'fixed price',
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                      const SizedBox(height: 24),
+                      if (liveProduct.capacity != null || liveProduct.mobileNumber != null || liveProduct.location != null) ...[
+                        const Text('Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        _buildInfoTile(Icons.people_outline, 'Capacity: ${liveProduct.capacity ?? "N/A"}'),
+                        if (liveProduct.location != null) _buildInfoTile(Icons.location_on_outlined, liveProduct.location!),
+                        if (liveProduct.mobileNumber != null) _buildInfoTile(Icons.phone_outlined, liveProduct.mobileNumber!),
+                        const SizedBox(height: 24),
+                      ],
+                      const Text('Check Availability', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      _buildCalendar(context, isDateBlocked),
+                      const SizedBox(height: 24),
+                      if (liveProduct.priceType == 'per_person') ...[
+                        const Text('Book for People', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            _buildCounterButton(Icons.remove, () => setState(() => _personCount = _personCount > 1 ? _personCount - 1 : 1)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Text('$_personCount', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            ),
+                            _buildCounterButton(Icons.add, () => setState(() => _personCount++)),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      const Text('Booking Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _occasionController,
+                        decoration: InputDecoration(
+                          labelText: 'Occasion',
+                          hintText: 'e.g. Wedding, Birthday',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        ),
+                      ),
+                      const SizedBox(height: 100),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  if (widget.product.capacity != null || widget.product.mobileNumber != null || widget.product.location != null) ...[
-                    const Text('Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    _buildInfoTile(Icons.people_outline, 'Capacity: ${widget.product.capacity ?? "N/A"}'),
-                    if (widget.product.location != null) _buildInfoTile(Icons.location_on_outlined, widget.product.location!),
-                    if (widget.product.mobileNumber != null) _buildInfoTile(Icons.phone_outlined, widget.product.mobileNumber!),
-                    const SizedBox(height: 24),
-                  ],
-                  const Text('Check Availability', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildCalendar(context),
-                  const SizedBox(height: 24),
-                  if (widget.product.priceType == 'per_person') ...[
-                    const Text('Book for People', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _buildCounterButton(Icons.remove, () => setState(() => _personCount = _personCount > 1 ? _personCount - 1 : 1)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Text('$_personCount', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                        ),
-                        _buildCounterButton(Icons.add, () => setState(() => _personCount++)),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  const Text('Booking Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _occasionController,
-                    decoration: InputDecoration(
-                      labelText: 'Occasion',
-                      hintText: 'e.g. Wedding, Birthday',
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 100),
-                ],
+                ),
               ),
+            ],
+          ),
+          bottomSheet: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Total Price', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                      Builder(builder: (context) {
+                        double basePrice = double.tryParse(liveProduct.price) ?? 0.0;
+                        double total = liveProduct.priceType == 'per_person' ? basePrice * _personCount : basePrice;
+                        return Text('₹${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF904CC1)));
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF904CC1).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF904CC1)),
+                          onPressed: () async {
+                            final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+                            String chatId = await chatProvider.startChat(authProvider.userModel!.uid, liveVendor.vendorId);
+                            if (context.mounted) {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(
+                                chatId: chatId, 
+                                title: liveVendor.businessName
+                              )));
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _selectedDate != null ? () async {
+                            final booking = BookingModel(
+                              bookingId: '',
+                              vendorId: liveVendor.vendorId,
+                              userId: authProvider.userModel!.uid,
+                              status: 'requested',
+                              bookingDate: _selectedDate!,
+                              productName: liveProduct.name,
+                              productImage: liveProduct.images.isNotEmpty ? liveProduct.images.first : '',
+                              occasion: _occasionController.text.trim().isEmpty ? 'General' : _occasionController.text.trim(),
+                            );
+                            await userProvider.sendBookingRequest(booking);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Booking request sent successfully!'), backgroundColor: Colors.green),
+                              );
+                            }
+                          } : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF904CC1),
+                            minimumSize: const Size(double.infinity, 56),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: const Text('Confirm Booking', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-      bottomSheet: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Total Price', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                  Text('₹${_totalPrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF904CC1))),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF904CC1).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF904CC1)),
-                      onPressed: () async {
-                        final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-                        String chatId = await chatProvider.startChat(authProvider.userModel!.uid, widget.vendor.vendorId);
-                        if (context.mounted) {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(
-                            chatId: chatId, 
-                            title: widget.vendor.businessName
-                          )));
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _selectedDate != null ? () async {
-                        final booking = BookingModel(
-                          bookingId: '',
-                          vendorId: widget.vendor.vendorId,
-                          userId: authProvider.userModel!.uid,
-                          status: 'requested',
-                          bookingDate: _selectedDate!,
-                          productName: widget.product.name,
-                          productImage: widget.product.images.isNotEmpty ? widget.product.images.first : '',
-                          occasion: _occasionController.text.trim().isEmpty ? 'General' : _occasionController.text.trim(),
-                        );
-                        await userProvider.sendBookingRequest(booking);
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Booking request sent successfully!'), backgroundColor: Colors.green),
-                          );
-                        }
-                      } : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF904CC1),
-                        minimumSize: const Size(double.infinity, 56),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: const Text('Confirm Booking', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+        );
+      }
     );
   }
 
@@ -291,7 +329,7 @@ class _ProductDetailViewState extends State<ProductDetailView> {
     );
   }
 
-  Widget _buildCalendar(BuildContext context) {
+  Widget _buildCalendar(BuildContext context, bool Function(DateTime) isDateBlocked) {
     // Calculate the number of days in the focused month
     final lastDayOfMonth = DateTime(_focusedDate.year, _focusedDate.month + 1, 0).day;
     final firstDayOfMonth = DateTime(_focusedDate.year, _focusedDate.month, 1);
@@ -338,7 +376,7 @@ class _ProductDetailViewState extends State<ProductDetailView> {
                 
                 // Don't allow selecting past dates
                 bool isPast = date.isBefore(DateTime.now().subtract(const Duration(days: 1)));
-                bool blocked = _isDateBlocked(date);
+                bool blocked = isDateBlocked(date);
                 bool selected = _selectedDate != null && 
                     DateFormat('yyyy-MM-dd').format(_selectedDate!) == DateFormat('yyyy-MM-dd').format(date);
 
@@ -378,3 +416,4 @@ class _ProductDetailViewState extends State<ProductDetailView> {
     );
   }
 }
+
