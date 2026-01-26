@@ -14,6 +14,7 @@ class BookingModel {
   final String? productName;
   final String? productImage;
   final bool isActive;
+  final bool hasFeedback;
 
   BookingModel({
     required this.bookingId,
@@ -29,6 +30,7 @@ class BookingModel {
     this.quotePrice,
     this.quoteNote,
     this.isActive = true,
+    this.hasFeedback = false,
   });
 
   factory BookingModel.fromMap(Map<String, dynamic> data, String id) {
@@ -38,7 +40,8 @@ class BookingModel {
       vendorId: data['vendorId'] ?? '',
       userId: data['userId'] ?? '',
       status: data['status'] ?? 'requested',
-      bookingDate: (data['bookingDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      bookingDate:
+          (data['bookingDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       productName: data['productName'],
       productImage: data['productImage'],
       occasion: data['occasion'],
@@ -46,6 +49,7 @@ class BookingModel {
       quotePrice: data['quotePrice'],
       quoteNote: data['quoteNote'],
       isActive: data['isActive'] ?? true,
+      hasFeedback: data['hasFeedback'] ?? false,
     );
   }
 
@@ -63,6 +67,7 @@ class BookingModel {
       'quotePrice': quotePrice,
       'quoteNote': quoteNote,
       'isActive': isActive,
+      'hasFeedback': hasFeedback,
     };
   }
 }

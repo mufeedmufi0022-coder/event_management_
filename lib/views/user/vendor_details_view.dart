@@ -7,6 +7,8 @@ import '../../providers/user_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../common/chat_view.dart';
 import '../../core/utils/image_helper.dart';
+import '../common/location_map_view.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'product_detail_view.dart';
 
@@ -157,70 +159,111 @@ class VendorDetailsView extends StatelessWidget {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Stack(
                                   children: [
-                                    Expanded(
-                                      child: ClipRRect(
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                              top: Radius.circular(16),
-                                            ),
-                                        child: ImageHelper.displayImage(
-                                          p.images.isNotEmpty
-                                              ? p.images.first
-                                              : '',
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            p.name,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            maxLines: 1,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            p.priceType == 'per_person'
-                                                ? '₹${p.price}/person'
-                                                : '₹${p.price}',
-                                            style: const TextStyle(
-                                              color: Color(0xFF904CC1),
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.star,
-                                                size: 12,
-                                                color: Colors.amber,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                p.averageRating.toStringAsFixed(
-                                                  1,
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                const BorderRadius.vertical(
+                                                  top: Radius.circular(16),
                                                 ),
+                                            child: ImageHelper.displayImage(
+                                              p.images.isNotEmpty
+                                                  ? p.images.first
+                                                  : '',
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                p.name,
                                                 style: const TextStyle(
-                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                maxLines: 1,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                p.priceType == 'per_person'
+                                                    ? '₹${p.price}/person'
+                                                    : '₹${p.price}',
+                                                style: const TextStyle(
+                                                  color: Color(0xFF904CC1),
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.star,
+                                                    size: 12,
+                                                    color: Colors.amber,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    p.averageRating
+                                                        .toStringAsFixed(1),
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ],
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
+                                    if (p.latitude != null &&
+                                        p.longitude != null)
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: CircleAvatar(
+                                          radius: 14,
+                                          backgroundColor: Colors.white
+                                              .withOpacity(0.9),
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.map_outlined,
+                                              size: 14,
+                                              color: Colors.blue,
+                                            ),
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      LocationMapView(
+                                                        latLng: LatLng(
+                                                          p.latitude!,
+                                                          p.longitude!,
+                                                        ),
+                                                        title: p.name,
+                                                        address:
+                                                            p.location ??
+                                                            'No address',
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ),

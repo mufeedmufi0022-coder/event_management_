@@ -232,52 +232,27 @@ class CategoryDetailView extends StatelessWidget {
   }
 
   Map<String, dynamic> _getCategoryData(String category, BuildContext context) {
-    // Basic header images mapping from AppConstants
+    // Get info for the specific category from AppConstants
     final categoryInfo =
         AppConstants.eventCategories[category] ??
         AppConstants.eventCategories['Wedding']!;
 
     final headerImage = categoryInfo['headerImage'] as String;
 
-    // Dynamic Subcategories Fetching from Firestore Data
-    final userProvider = context.read<UserProvider>();
-    final vendors = userProvider.approvedVendors;
-    final Set<String> serviceTypes = {};
+    // Use the specific services defined for this category in AppConstants
+    final categoryServices =
+        categoryInfo['services'] as List<Map<String, dynamic>>;
 
-    print('=== COLLECTING SERVICE TYPES (PRODUCT-BASED ONLY) ===');
-    for (var vendor in vendors) {
-      for (var product in vendor.products) {
-        if (product.categoryType != null && product.categoryType!.isNotEmpty) {
-          serviceTypes.add(product.categoryType!.trim());
-        }
-      }
-    }
+    final List<Map<String, dynamic>> subCategories = categoryServices
+        .map(
+          (s) => {
+            'name': s['name'] as String,
+            'image': AppConstants.getServiceImage(s['name'] as String),
+            'icon': s['icon'] as IconData,
+          },
+        )
+        .toList();
 
-    List<Map<String, dynamic>> dynamicSubCategories = [];
-
-    for (var type in serviceTypes) {
-      dynamicSubCategories.add({
-        'name': type,
-        'image': AppConstants.getServiceImage(type),
-      });
-    }
-
-    // If no vendors/types found (e.g. initial load or empty db),
-    // Use the mapped categories for THIS specific event category
-    if (dynamicSubCategories.isEmpty) {
-      final defaultServices =
-          categoryInfo['services'] as List<Map<String, dynamic>>;
-      dynamicSubCategories = defaultServices
-          .map(
-            (s) => {
-              'name': s['name'],
-              'image': AppConstants.getServiceImage(s['name']),
-              'icon': s['icon'],
-            },
-          )
-          .toList();
-    }
-
-    return {'headerImage': headerImage, 'subCategories': dynamicSubCategories};
+    return {'headerImage': headerImage, 'subCategories': subCategories};
   }
 }

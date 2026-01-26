@@ -149,6 +149,30 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> submitFeedback(
+    String bookingId,
+    String vendorId,
+    String productName,
+    RatingModel rating,
+  ) async {
+    _setLoading(true);
+    try {
+      await _userService.submitFeedback(
+        bookingId,
+        vendorId,
+        productName,
+        rating,
+      );
+      _error = null;
+    } catch (e) {
+      print('ERROR submitting feedback: $e');
+      _error = 'Failed to submit feedback: $e';
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   void _setLoading(bool val) {
     _isLoading = val;
     notifyListeners();

@@ -10,6 +10,9 @@ import '../common/chat_view.dart';
 import '../user/vendor_details_view.dart';
 import '../../core/utils/image_helper.dart';
 import '../../providers/chat_provider.dart';
+import '../common/location_map_view.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class VendorDashboardView extends StatefulWidget {
   const VendorDashboardView({super.key});
@@ -94,6 +97,7 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
     }
 
     final List<Widget> _tabs = [
+      const VendorHomeTab(), // New Home Tab
       const BookingRequestsTab(),
       const VendorAvailabilityTab(),
       const ChatListView(),
@@ -119,6 +123,7 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
           selectedItemColor: const Color(0xFF904CC1),
           unselectedItemColor: Colors.grey,
           items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Requests'),
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_today),
@@ -157,6 +162,354 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
               minimumSize: const Size(0, 40),
             ),
             child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class VendorHomeTab extends StatelessWidget {
+  const VendorHomeTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<VendorProvider>();
+    final bookings = provider.bookings;
+    final vendor = provider.vendorModel;
+
+    // Summary Statistics
+    final totalBookings = bookings.length;
+    final pendingBookings = bookings
+        .where((b) => b.status == 'requested')
+        .length;
+    final acceptedBookings = bookings
+        .where((b) => b.status == 'accepted')
+        .length;
+    final completedBookings = bookings
+        .where((b) => b.status == 'completed')
+        .length;
+
+    // Get Recent Feedback
+    final allRatings = vendor?.products.expand((p) => p.ratings).toList() ?? [];
+    allRatings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final recentRatings = allRatings.take(3).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F8),
+      appBar: AppBar(
+        title: const Text(
+          'Business Console',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Performance Summary',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            // Summary Cards
+            Row(
+              children: [
+                _buildStatCard('Total', totalBookings.toString(), Colors.blue),
+                const SizedBox(width: 12),
+                _buildStatCard(
+                  'Pending',
+                  pendingBookings.toString(),
+                  Colors.orange,
+                ),
+                const SizedBox(width: 12),
+                _buildStatCard(
+                  'Success',
+                  completedBookings.toString(),
+                  Colors.green,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Analytics Chart
+            _buildVendorChart(bookings),
+            const SizedBox(height: 24),
+
+            // Recent Requests heading
+            const Text(
+              'Recent Activity',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            if (bookings.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text('No recent activities'),
+                ),
+              )
+            else
+              ...bookings.take(2).map((b) => _buildMiniBooking(b)),
+
+            const SizedBox(height: 24),
+            // Recent Feedbacks heading
+            const Text(
+              'Customer Feedback',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            if (recentRatings.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text('No reviews received yet'),
+                ),
+              )
+            else
+              ...recentRatings.map((r) => _buildRatingItem(r)),
+
+            const SizedBox(height: 80),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVendorChart(List<BookingModel> bookings) {
+    final statusCounts = {
+      'requested': 0,
+      'quoted': 0,
+      'accepted': 0,
+      'completed': 0,
+      'cancelled': 0,
+    };
+    for (var b in bookings) {
+      if (statusCounts.containsKey(b.status)) {
+        statusCounts[b.status] = statusCounts[b.status]! + 1;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Booking Distribution',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 140,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: (bookings.length / 2 + 5).toDouble(),
+                barTouchData: BarTouchData(enabled: false),
+                titlesData: const FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                gridData: const FlGridData(show: false),
+                barGroups: [
+                  _makeBarGroup(
+                    0,
+                    statusCounts['requested']!.toDouble(),
+                    Colors.orange,
+                  ),
+                  _makeBarGroup(
+                    1,
+                    statusCounts['quoted']!.toDouble(),
+                    Colors.blue,
+                  ),
+                  _makeBarGroup(
+                    2,
+                    statusCounts['accepted']!.toDouble(),
+                    Colors.yellow,
+                  ),
+                  _makeBarGroup(
+                    3,
+                    statusCounts['completed']!.toDouble(),
+                    Colors.green,
+                  ),
+                  _makeBarGroup(
+                    4,
+                    statusCounts['cancelled']!.toDouble(),
+                    Colors.red,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildLegend('Pend', Colors.orange),
+              _buildLegend('Quot', Colors.blue),
+              _buildLegend('Acce', Colors.yellow),
+              _buildLegend('Done', Colors.green),
+              _buildLegend('Canc', Colors.red),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  BarChartGroupData _makeBarGroup(int x, double y, Color color) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: y,
+          color: color,
+          width: 22,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegend(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildMiniBooking(BookingModel b) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.notifications_active_outlined, color: Colors.orange),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  b.productName ?? 'New Request',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Status: ${b.status}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${b.bookingDate.day}/${b.bookingDate.month}',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingItem(RatingModel r) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                r.userName,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: List.generate(
+                  5,
+                  (i) => Icon(
+                    Icons.star,
+                    size: 14,
+                    color: i < r.stars ? Colors.amber : Colors.grey[300],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            r.comment,
+            style: const TextStyle(fontSize: 13, color: Colors.black87),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${r.timestamp.day}/${r.timestamp.month}/${r.timestamp.year}',
+            style: const TextStyle(fontSize: 10, color: Colors.grey),
           ),
         ],
       ),
@@ -368,9 +721,72 @@ class BookingRequestsTab extends StatelessWidget {
                     child: const Text('Mark as Completed'),
                   ),
                 ),
+              if (booking.status == 'completed' && booking.hasFeedback)
+                _buildFeedbackDisplay(booking, provider),
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFeedbackDisplay(BookingModel booking, VendorProvider provider) {
+    // Find the rating matching this booking context
+    final product = provider.vendorModel?.products.firstWhere(
+      (p) => p.name == booking.productName,
+      orElse: () => provider.vendorModel!.products.first,
+    );
+    final rating = product?.ratings.firstWhere(
+      (r) =>
+          r.userName != 'Anonymous' &&
+          r.timestamp.isAfter(booking.bookingDate), // Simple logic to match
+      orElse: () => product.ratings.last,
+    );
+
+    if (rating == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.star, color: Colors.amber, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                'Customer Feedback',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.amber[900],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            rating.comment,
+            style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: List.generate(
+              5,
+              (i) => Icon(
+                Icons.star,
+                size: 12,
+                color: i < rating.stars ? Colors.amber : Colors.grey[300],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -739,6 +1155,37 @@ class VendorProfileTab extends StatelessWidget {
                               ),
                             ],
                           ),
+                          if (p.latitude != null && p.longitude != null)
+                            Positioned(
+                              top: 4,
+                              left: 4,
+                              child: CircleAvatar(
+                                radius: 14,
+                                backgroundColor: Colors.white.withOpacity(0.9),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.map_outlined,
+                                    size: 14,
+                                    color: Colors.blue,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => LocationMapView(
+                                          latLng: LatLng(
+                                            p.latitude!,
+                                            p.longitude!,
+                                          ),
+                                          title: p.name,
+                                          address: p.location ?? 'No address',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
                           Positioned(
                             top: 4,
                             right: 4,

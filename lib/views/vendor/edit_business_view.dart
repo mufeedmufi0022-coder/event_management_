@@ -41,6 +41,7 @@ class _EditBusinessViewState extends State<EditBusinessView> {
     'Catering',
     'Photography',
     'Music/DJ',
+    'Restaurant',
   ];
 
   @override
@@ -160,6 +161,8 @@ class _EditBusinessViewState extends State<EditBusinessView> {
     String? mobileNumber = product?.mobileNumber;
     String? location = product?.location;
     String? subType = product?.subType;
+    double? latitude = product?.latitude;
+    double? longitude = product?.longitude;
 
     showModalBottomSheet(
       context: context,
@@ -378,11 +381,40 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _buildTextFieldInPopup(
-                  'Specific Location',
-                  (v) => location = v,
-                  Icons.location_on_outlined,
-                  initialValue: location ?? '',
+                StatefulBuilder(
+                  builder: (context, setFieldState) => _buildTextFieldInPopup(
+                    'Specific Location',
+                    (v) => location = v,
+                    Icons.location_on_outlined,
+                    initialValue: location ?? '',
+                    suffixIcon: IconButton(
+                      icon: const Icon(
+                        Icons.map_outlined,
+                        color: Color(0xFF904CC1),
+                      ),
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LocationPickerView(
+                              initialCenter:
+                                  latitude != null && longitude != null
+                                  ? LatLng(latitude!, longitude!)
+                                  : const LatLng(10.8505, 76.2711),
+                              initialAddress: location,
+                            ),
+                          ),
+                        );
+                        if (result is LocationResult) {
+                          setFieldState(() {
+                            location = result.address;
+                            latitude = result.latLng.latitude;
+                            longitude = result.latLng.longitude;
+                          });
+                        }
+                      },
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 if (categoryType == 'Vehicle')
@@ -436,6 +468,8 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                               blockedDates: product?.blockedDates ?? [],
                               bookedDates: product?.bookedDates ?? [],
                               ratings: product?.ratings ?? [],
+                              latitude: latitude,
+                              longitude: longitude,
                             );
                             if (product == null) {
                               _products.add(newProduct);
@@ -477,6 +511,7 @@ class _EditBusinessViewState extends State<EditBusinessView> {
     IconData icon, {
     TextInputType keyboardType = TextInputType.text,
     String initialValue = '',
+    Widget? suffixIcon,
   }) {
     return TextFormField(
       initialValue: initialValue,
@@ -485,6 +520,7 @@ class _EditBusinessViewState extends State<EditBusinessView> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: Colors.grey),
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: const Color(0xFFF1F4F8),
         border: OutlineInputBorder(

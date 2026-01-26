@@ -109,6 +109,37 @@ class UserService {
         );
   }
 
+  // Submit feedback for a booking
+  Future<void> submitFeedback(
+    String bookingId,
+    String vendorId,
+    String productName,
+    RatingModel rating,
+  ) async {
+    // 1. Update Vendor's Product Ratings
+    final vendorDoc = await _firestore.collection('users').doc(vendorId).get();
+    if (vendorDoc.exists) {
+      final data = vendorDoc.data()!;
+      List products = data['products'] ?? [];
+      int index = products.indexWhere((p) => p['name'] == productName);
+
+      if (index != -1) {
+        List ratings = products[index]['ratings'] ?? [];
+        ratings.add(rating.toMap());
+        products[index]['ratings'] = ratings;
+
+        await _firestore.collection('users').doc(vendorId).update({
+          'products': products,
+        });
+      }
+    }
+
+    // 2. Mark Booking as having feedback
+    await _firestore.collection('bookings').doc(bookingId).update({
+      'hasFeedback': true,
+    });
+  }
+
   // Helper for audit logging (simplified for now)
   Future<void> _logAction(String type, String action, String actorId) async {
     await _firestore.collection('logs').add({

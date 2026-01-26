@@ -45,6 +45,8 @@ class ProductModel {
   final List<String> blockedDates;
   final List<String> bookedDates;
   final List<RatingModel> ratings;
+  final double? latitude;
+  final double? longitude;
 
   ProductModel({
     required this.images,
@@ -59,6 +61,8 @@ class ProductModel {
     this.blockedDates = const [],
     this.bookedDates = const [],
     this.ratings = const [],
+    this.latitude,
+    this.longitude,
   });
 
   // Backward compatibility for single imageUrl
@@ -82,6 +86,12 @@ class ProductModel {
       ratings: (data['ratings'] as List? ?? [])
           .map((r) => RatingModel.fromMap(r as Map<String, dynamic>))
           .toList(),
+      latitude: data['latitude'] is num
+          ? (data['latitude'] as num).toDouble()
+          : null,
+      longitude: data['longitude'] is num
+          ? (data['longitude'] as num).toDouble()
+          : null,
     );
   }
 
@@ -100,6 +110,8 @@ class ProductModel {
       'blockedDates': blockedDates,
       'bookedDates': bookedDates,
       'ratings': ratings.map((r) => r.toMap()).toList(),
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 

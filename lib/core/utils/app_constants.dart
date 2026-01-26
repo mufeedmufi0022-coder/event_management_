@@ -27,7 +27,6 @@ class AppConstants {
     'Inauguration': {
       'headerImage': 'assets/images/inauguration_thumb.png',
       'services': [
-        {'name': 'Celebritys', 'icon': Icons.star},
         {'name': 'Decoration', 'icon': Icons.auto_awesome},
         {'name': 'Food', 'icon': Icons.restaurant},
         {'name': 'Catering', 'icon': Icons.room_service},
@@ -38,7 +37,6 @@ class AppConstants {
     'Party': {
       'headerImage': 'assets/images/party_thumb.png',
       'services': [
-        {'name': 'Celebritys', 'icon': Icons.star},
         {'name': 'Decoration', 'icon': Icons.auto_awesome},
         {'name': 'Food', 'icon': Icons.restaurant},
         {'name': 'Convention Center', 'icon': Icons.business},
