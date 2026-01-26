@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../providers/locale_provider.dart';
+import '../../providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'vendor_list_view.dart';
 import '../../core/utils/image_helper.dart';
+import '../../core/utils/app_constants.dart';
 
 class CategoryDetailView extends StatelessWidget {
   final String category;
@@ -11,10 +13,89 @@ class CategoryDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lp = context.watch<LocaleProvider>();
-    
-    final categoryData = _getCategoryData(category);
-    final subCategories = categoryData['subCategories'] as List<Map<String, dynamic>>;
+    final userProvider = context.watch<UserProvider>();
+
+    // Show error if present
+    if (userProvider.error != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(userProvider.error!),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              textColor: Colors.white,
+              onPressed: () => userProvider.clearError(),
+            ),
+          ),
+        );
+        userProvider.clearError();
+      });
+    }
+
+    final categoryData = _getCategoryData(category, context);
+    final subCategories =
+        categoryData['subCategories'] as List<Map<String, dynamic>>;
     final headerImage = categoryData['headerImage'] as String;
+
+    // Show loading indicator if vendors are still loading
+    if (userProvider.isLoading && userProvider.approvedVendors.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF1F4F8),
+        appBar: AppBar(
+          title: Text(category),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading services...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show message if no subcategories found
+    if (subCategories.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF1F4F8),
+        appBar: AppBar(
+          title: Text(category),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.search_off, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                lp.get('No services available', 'സേവനങ്ങളൊന്നും ലഭ്യമല്ല'),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                lp.get(
+                  'Please check back later',
+                  'പിന്നീട് വീണ്ടും പരിശോധിക്കുക',
+                ),
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F8),
@@ -63,12 +144,21 @@ class CategoryDetailView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    lp.get('What are you looking for?', 'നിങ്ങൾ എന്താണ് തിരയുന്നത്?'),
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    lp.get(
+                      'What are you looking for?',
+                      'നിങ്ങൾ എന്താണ് തിരയുന്നത്?',
+                    ),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    lp.get('Select a service category to find the best vendors', 'മികച്ച വെണ്ടർമാരെ കണ്ടെത്താൻ ഒരു സേവന വിഭാഗം തിരഞ്ഞെടുക്കുക'),
+                    lp.get(
+                      'Select a service category to find the best vendors',
+                      'മികച്ച വെണ്ടർമാരെ കണ്ടെത്താൻ ഒരു സേവന വിഭാഗം തിരഞ്ഞെടുക്കുക',
+                    ),
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   const SizedBox(height: 24),
@@ -80,18 +170,15 @@ class CategoryDetailView extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+                crossAxisCount: 3, // Changed to 3 for grid view matching images
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
-                childAspectRatio: 1.1,
+                childAspectRatio: 0.8,
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final sub = subCategories[index];
-                  return _buildSubCategoryCard(context, sub);
-                },
-                childCount: subCategories.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final sub = subCategories[index];
+                return _buildSubCategoryCard(context, sub);
+              }, childCount: subCategories.length),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
@@ -108,116 +195,89 @@ class CategoryDetailView extends StatelessWidget {
           builder: (context) => VendorListView(category: sub['name']),
         ),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          image: DecorationImage(
-            image: AssetImage(sub['image'] as String),
-            fit: BoxFit.cover,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.1),
-                      Colors.black.withOpacity(0.8),
-                    ],
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Image.asset(
+                    sub['image'] as String,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(sub['icon'] as IconData? ?? Icons.category),
                   ),
                 ),
               ),
-              Positioned(
-                bottom: 12,
-                left: 12,
-                right: 12,
-                child: Text(
-                  sub['name'],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    letterSpacing: 0.3,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            sub['name'],
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
 
-  Map<String, dynamic> _getCategoryData(String category) {
-    switch (category) {
-      case 'Wedding':
-      case 'വിവാഹം':
-        return {
-          'headerImage': 'assets/images/wedding_thumb.png',
-          'subCategories': [
-            {'name': 'Convention Center', 'image': 'assets/images/convention_center_sub.png', 'color': Colors.blue},
-            {'name': 'Decoration', 'image': 'assets/images/decoration_sub.png', 'color': Colors.pink},
-            {'name': 'Food & Catering', 'image': 'assets/images/food_sub.png', 'color': Colors.orange},
-            {'name': 'Catering Boys', 'image': 'assets/images/catering_boys_sub.png', 'color': Colors.teal},
-            {'name': 'Rental Wears', 'image': 'assets/images/rental_wears_sub.png', 'color': Colors.purple},
-            {'name': 'Luxury Cars', 'image': 'assets/images/luxury_cars_sub.png', 'color': Colors.indigo},
-            {'name': 'Photographer', 'image': 'assets/images/photographer_sub.png', 'color': Colors.red},
-          ]
-        };
-      case 'Birthday':
-      case 'ജന്മദിനം':
-        return {
-          'headerImage': 'assets/images/birthday_thumb.png',
-          'subCategories': [
-            {'name': 'Restaurant', 'image': 'assets/images/restaurant_sub.png', 'color': Colors.orange},
-            {'name': 'Decoration', 'image': 'assets/images/decoration_sub.png', 'color': Colors.purple},
-            {'name': 'Food', 'image': 'assets/images/food_sub.png', 'color': Colors.red},
-            {'name': 'Catering', 'image': 'assets/images/food_sub.png', 'color': Colors.blue},
-          ]
-        };
-      case 'Inauguration':
-      case 'ഉദ്ഘാടനം':
-        return {
-          'headerImage': 'assets/images/inauguration_thumb.png',
-          'subCategories': [
-            {'name': 'Decoration', 'image': 'assets/images/decoration_sub.png', 'color': Colors.amber},
-            {'name': 'Food', 'image': 'assets/images/food_sub.png', 'color': Colors.orange},
-            {'name': 'Catering', 'image': 'assets/images/food_sub.png', 'color': Colors.blue},
-            {'name': 'Photographer', 'image': 'assets/images/photographer_sub.png', 'color': Colors.red},
-            {'name': 'Luxury Cars', 'image': 'assets/images/luxury_cars_sub.png', 'color': Colors.indigo},
-          ]
-        };
-      case 'Party':
-      case 'പാർട്ടി':
-        return {
-          'headerImage': 'assets/images/party_thumb.png',
-          'subCategories': [
-            {'name': 'Decoration', 'image': 'assets/images/decoration_sub.png', 'color': Colors.blue},
-            {'name': 'Food', 'image': 'assets/images/food_sub.png', 'color': Colors.pink},
-            {'name': 'Convention Center', 'image': 'assets/images/convention_center_sub.png', 'color': Colors.green},
-            {'name': 'Catering', 'image': 'assets/images/food_sub.png', 'color': Colors.orange},
-            {'name': 'Luxury Cars', 'image': 'assets/images/luxury_cars_sub.png', 'color': Colors.indigo},
-          ]
-        };
-      default:
-        return {
-          'headerImage': 'assets/images/wedding_thumb.png',
-          'subCategories': []
-        };
+  Map<String, dynamic> _getCategoryData(String category, BuildContext context) {
+    // Basic header images mapping from AppConstants
+    final categoryInfo =
+        AppConstants.eventCategories[category] ??
+        AppConstants.eventCategories['Wedding']!;
+
+    final headerImage = categoryInfo['headerImage'] as String;
+
+    // Dynamic Subcategories Fetching from Firestore Data
+    final userProvider = context.read<UserProvider>();
+    final vendors = userProvider.approvedVendors;
+    final Set<String> serviceTypes = {};
+
+    print('=== COLLECTING SERVICE TYPES (PRODUCT-BASED ONLY) ===');
+    for (var vendor in vendors) {
+      for (var product in vendor.products) {
+        if (product.categoryType != null && product.categoryType!.isNotEmpty) {
+          serviceTypes.add(product.categoryType!.trim());
+        }
+      }
     }
+
+    List<Map<String, dynamic>> dynamicSubCategories = [];
+
+    for (var type in serviceTypes) {
+      dynamicSubCategories.add({
+        'name': type,
+        'image': AppConstants.getServiceImage(type),
+      });
+    }
+
+    // If no vendors/types found (e.g. initial load or empty db),
+    // Use the mapped categories for THIS specific event category
+    if (dynamicSubCategories.isEmpty) {
+      final defaultServices =
+          categoryInfo['services'] as List<Map<String, dynamic>>;
+      dynamicSubCategories = defaultServices
+          .map(
+            (s) => {
+              'name': s['name'],
+              'image': AppConstants.getServiceImage(s['name']),
+              'icon': s['icon'],
+            },
+          )
+          .toList();
+    }
+
+    return {'headerImage': headerImage, 'subCategories': dynamicSubCategories};
   }
 }

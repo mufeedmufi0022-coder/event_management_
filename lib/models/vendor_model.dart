@@ -66,7 +66,9 @@ class ProductModel {
 
   factory ProductModel.fromMap(Map<String, dynamic> data) {
     return ProductModel(
-      images: List<String>.from(data['images'] ?? (data['imageUrl'] != null ? [data['imageUrl']] : [])),
+      images: List<String>.from(
+        data['images'] ?? (data['imageUrl'] != null ? [data['imageUrl']] : []),
+      ),
       price: data['price'] ?? '',
       name: data['name'] ?? '',
       capacity: data['capacity'],
@@ -119,7 +121,8 @@ class VendorModel {
   final String logoUrl;
   final List<ProductModel> products;
   final String status; // 'pending', 'approved'
-  final Map<String, String> availability; // {"YYYY-MM-DD": "available | blocked"}
+  final Map<String, String>
+  availability; // {"YYYY-MM-DD": "available | blocked"}
   final bool isActive;
 
   VendorModel({
@@ -139,19 +142,39 @@ class VendorModel {
   });
 
   factory VendorModel.fromMap(Map<String, dynamic> data, String id) {
+    // Handle hybrid structure where Vendor IS the product (flattened)
+    List<ProductModel> parsedProducts = (data['products'] as List? ?? [])
+        .map((p) => ProductModel.fromMap(p as Map<String, dynamic>))
+        .toList();
+
+    // If no explicit products list, but top-level fields suggest a product-vendor, synthesize one.
+    if (parsedProducts.isEmpty &&
+        (data.containsKey('price') || data.containsKey('images'))) {
+      // This handles the structure seen in user screenshot where price/images are at root
+      // Inject serviceType as categoryType if missing so filtering works
+      Map<String, dynamic> productData = Map.from(data);
+      if (productData['categoryType'] == null) {
+        productData['categoryType'] = data['serviceType'];
+      }
+      parsedProducts.add(ProductModel.fromMap(productData));
+    }
+
     return VendorModel(
       vendorId: id,
-      businessName: data['businessName'] ?? '',
+      businessName:
+          data['businessName'] ?? data['name'] ?? '', // Fallback to 'name'
       serviceType: data['serviceType'] ?? '',
       location: data['location'] ?? '',
-      priceRange: data['priceRange'] ?? '',
+      priceRange:
+          data['priceRange'] ??
+          data['price'] ??
+          '', // Map direct price if needed
       description: data['description'] ?? '',
-      contactNumber: data['contactNumber'] ?? '',
+      contactNumber: data['contactNumber'] ?? data['mobileNumber'] ?? '',
       images: List<String>.from(data['images'] ?? []),
-      logoUrl: data['logoUrl'] ?? '',
-      products: (data['products'] as List? ?? [])
-          .map((p) => ProductModel.fromMap(p as Map<String, dynamic>))
-          .toList(),
+      logoUrl:
+          data['logoUrl'] ?? data['imageUrl'] ?? '', // Fallback to main image
+      products: parsedProducts,
       status: data['status'] ?? 'pending',
       availability: Map<String, String>.from(data['availability'] ?? {}),
       isActive: data['isActive'] ?? true,
@@ -179,7 +202,8 @@ class VendorModel {
     if (products.isEmpty) return 0.0;
     final allRatings = products.expand((p) => p.ratings).toList();
     if (allRatings.isEmpty) return 0.0;
-    return allRatings.map((r) => r.stars).reduce((a, b) => a + b) / allRatings.length;
+    return allRatings.map((r) => r.stars).reduce((a, b) => a + b) /
+        allRatings.length;
   }
 
   int get reviewCount {

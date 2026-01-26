@@ -24,10 +24,10 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _init() async {
     _isLoading = true;
     notifyListeners();
-    
+
     final prefs = await SharedPreferences.getInstance();
     final String? savedUid = prefs.getString('user_id');
-    
+
     if (savedUid != null) {
       await _fetchUserData(savedUid);
     }
@@ -38,7 +38,7 @@ class AuthProvider extends ChangeNotifier {
         await _fetchUserData(user.uid);
       }
     });
-    
+
     _isLoading = false;
     notifyListeners();
   }
@@ -55,12 +55,22 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> register(String email, String password, String name, String role) async {
+  Future<bool> register(
+    String email,
+    String password,
+    String name,
+    String role,
+  ) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      UserCredential? result = await _authService.registerWithEmail(email, password, name, role);
+      UserCredential? result = await _authService.registerWithEmail(
+        email,
+        password,
+        name,
+        role,
+      );
       if (result?.user != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_id', result!.user!.uid);
@@ -86,33 +96,49 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
+      print('=== LOGIN ATTEMPT ===');
+      print('Email: $email');
+
       // Priority: Try Firestore manual login first to bypass security issues/reCAPTCHA
       UserModel? user = await _authService.firestoreLogin(email, password);
       if (user != null) {
         _userModel = user;
-        
+
         // Save to local storage for persistence
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_id', user.uid);
-        
+
         // Background sync: Try logging into Firebase Auth quietly if possible
         try {
           await _authService.loginWithEmail(email, password);
+          print('Firebase Auth sync successful');
         } catch (e) {
-          print('Background Firebase Auth login failed, continuing with Firestore session');
+          print(
+            'Background Firebase Auth login failed, continuing with Firestore session: $e',
+          );
         }
 
         _isLoading = false;
         notifyListeners();
+        print('✓ Login successful');
         return true;
       }
 
       _errorMessage = 'Invalid email or password';
+      print('✗ Login failed: $_errorMessage');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } on String catch (e) {
+      // Catch custom error messages (like vendor approval status)
+      _errorMessage = e;
+      print('✗ Login error: $e');
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = 'Login failed: ${e.toString()}';
+      print('✗ Login exception: $e');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -123,17 +149,17 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    
+
     try {
       UserModel? user = await _authService.firestoreLogin(email, password);
-      
+
       if (user != null && user.role == 'admin') {
         _userModel = user;
-        
+
         // Save for persistence
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_id', user.uid);
-        
+
         // Background sync
         try {
           await _authService.loginWithEmail(email, password);
@@ -150,7 +176,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString();
     }
-    
+
     _isLoading = false;
     notifyListeners();
     return false;
@@ -161,33 +187,88 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProfile({required String name, required String phone, required String photoUrl}) async {
+  Future<void> updateProfile({
+    required String name,
+    required String phone,
+    required String photoUrl,
+  }) async {
     if (_userModel == null) return;
-    await _authService.updateProfile(_userModel!.uid, {'name': name, 'contactNumber': phone, 'logoUrl': photoUrl});
+    await _authService.updateProfile(_userModel!.uid, {
+      'name': name,
+      'contactNumber': phone,
+      'logoUrl': photoUrl,
+    });
     _userModel = await _authService.getUserData(_userModel!.uid);
     notifyListeners();
   }
 
+  Future<void> setCustomLocation(String address, double lat, double lng) async {
+    if (_userModel == null) return;
+    try {
+      // Clean up address if it contains full details, maybe shorter for display?
+      // For now keep as is.
+      await _authService.updateProfile(_userModel!.uid, {
+        'currentAddress': address,
+        'latitude': lat,
+        'longitude': lng,
+      });
+
+      // Update local model
+      _userModel = await _authService.getUserData(_userModel!.uid);
+      notifyListeners();
+    } catch (e) {
+      print("Failed to set custom location: $e");
+    }
+  }
+
   Future<void> updateLocation() async {
     if (_userModel == null) return;
-    
+
     try {
       final position = await LocationHelper.getCurrentPosition();
       if (position != null) {
-        final address = await LocationHelper.getAddressFromLatLng(position.latitude, position.longitude);
-        
+        final address = await LocationHelper.getAddressFromLatLng(
+          position.latitude,
+          position.longitude,
+        );
+
+        // Use coordinates if address derivation fails
+        final finalAddress =
+            address ??
+            "Lat: ${position.latitude.toStringAsFixed(2)}, Long: ${position.longitude.toStringAsFixed(2)}";
+
         await _authService.updateProfile(_userModel!.uid, {
-          'currentAddress': address,
+          'currentAddress': finalAddress,
           'latitude': position.latitude,
           'longitude': position.longitude,
         });
 
         // Update local model
         _userModel = await _authService.getUserData(_userModel!.uid);
-        notifyListeners();
+      } else {
+        // If location is not available and we don't have an address yet, set a placeholder locally
+        // This prevents the UI from being stuck on "Locating..."
+        if (_userModel!.currentAddress == null ||
+            _userModel!.currentAddress!.isEmpty) {
+          // We create a temporary copy with a placeholder address just for the UI
+          // We don't save this to the backend
+          _userModel = _userModel!.copyWith(
+            currentAddress: 'Location Unavailable',
+          );
+        }
       }
+      notifyListeners();
     } catch (e) {
       print("Failed to update location: $e");
+      // On error, also ensure we don't get stuck if address is null
+      if (_userModel != null &&
+          (_userModel!.currentAddress == null ||
+              _userModel!.currentAddress!.isEmpty)) {
+        _userModel = _userModel!.copyWith(
+          currentAddress: 'Location Unavailable',
+        );
+        notifyListeners();
+      }
     }
   }
 

@@ -48,8 +48,9 @@ class UserModel {
       uid: id,
       name: data['name']?.toString() ?? '',
       email: data['email']?.toString() ?? '',
-      role: data['role']?.toString().toLowerCase().trim() ?? 
-            (data['businessName'] != null ? 'vendor' : 'user'),
+      role:
+          data['role']?.toString().toLowerCase().trim() ??
+          (data['businessName'] != null ? 'vendor' : 'user'),
       status: data['status']?.toString().toLowerCase().trim() ?? 'pending',
       isActive: data['isActive'] ?? true,
       businessName: data['businessName']?.toString(),
@@ -60,15 +61,19 @@ class UserModel {
       contactNumber: data['contactNumber']?.toString(),
       images: data['images'] is List ? List<String>.from(data['images']) : [],
       logoUrl: data['logoUrl']?.toString(),
-      products: data['products'] is List 
+      products: data['products'] is List
           ? (data['products'] as List)
-              .where((p) => p is Map)
-              .map((p) => ProductModel.fromMap(Map<String, dynamic>.from(p)))
-              .toList()
+                .where((p) => p is Map)
+                .map((p) => ProductModel.fromMap(Map<String, dynamic>.from(p)))
+                .toList()
           : [],
       currentAddress: data['currentAddress']?.toString(),
-      latitude: data['latitude'] != null ? (data['latitude'] as num).toDouble() : null,
-      longitude: data['longitude'] != null ? (data['longitude'] as num).toDouble() : null,
+      latitude: data['latitude'] != null
+          ? (data['latitude'] as num).toDouble()
+          : null,
+      longitude: data['longitude'] != null
+          ? (data['longitude'] as num).toDouble()
+          : null,
     );
   }
 
@@ -92,5 +97,47 @@ class UserModel {
       'latitude': latitude,
       'longitude': longitude,
     };
+  }
+
+  UserModel copyWith({
+    String? uid,
+    String? name,
+    String? email,
+    String? role,
+    String? status,
+    bool? isActive,
+    String? businessName,
+    String? serviceType,
+    String? location,
+    String? priceRange,
+    String? description,
+    String? contactNumber,
+    List<String>? images,
+    String? logoUrl,
+    List<ProductModel>? products,
+    String? currentAddress,
+    double? latitude,
+    double? longitude,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      status: status ?? this.status,
+      isActive: isActive ?? this.isActive,
+      businessName: businessName ?? this.businessName,
+      serviceType: serviceType ?? this.serviceType,
+      location: location ?? this.location,
+      priceRange: priceRange ?? this.priceRange,
+      description: description ?? this.description,
+      contactNumber: contactNumber ?? this.contactNumber,
+      images: images ?? this.images,
+      logoUrl: logoUrl ?? this.logoUrl,
+      products: products ?? this.products,
+      currentAddress: currentAddress ?? this.currentAddress,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+    );
   }
 }

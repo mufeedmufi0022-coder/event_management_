@@ -13,13 +13,17 @@ class UserService {
 
   // Update event status
   Future<void> updateEventStatus(String eventId, String status) async {
-    await _firestore.collection('events').doc(eventId).update({'status': status});
+    await _firestore.collection('events').doc(eventId).update({
+      'status': status,
+    });
     _logAction('event', 'Status updated to $status', eventId);
   }
 
   // Soft delete event
   Future<void> softDeleteEvent(String eventId) async {
-    await _firestore.collection('events').doc(eventId).update({'isActive': false});
+    await _firestore.collection('events').doc(eventId).update({
+      'isActive': false,
+    });
     _logAction('event', 'Soft deleted event', eventId);
   }
 
@@ -30,27 +34,45 @@ class UserService {
         .where('userId', isEqualTo: uid)
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => EventModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => EventModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
   }
 
   // Get all approved vendors (only active ones)
   Stream<List<VendorModel>> getApprovedVendors() {
+    print('=== FETCHING APPROVED VENDORS ===');
     return _firestore
         .collection('users')
         .where('role', isEqualTo: 'vendor')
         .where('status', isEqualTo: 'approved')
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => VendorModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map((snapshot) {
+          print('Firestore query returned ${snapshot.docs.length} vendors');
+          final vendors = snapshot.docs
+              .map((doc) {
+                try {
+                  final vendor = VendorModel.fromMap(doc.data(), doc.id);
+                  print('  - ${vendor.businessName} (${vendor.serviceType})');
+                  return vendor;
+                } catch (e) {
+                  print('ERROR parsing vendor ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<VendorModel>()
+              .toList();
+          print('Successfully parsed ${vendors.length} vendors');
+          return vendors;
+        });
   }
 
   // Send booking request
   Future<void> sendBookingRequest(BookingModel booking) async {
-    // Check if vendor is available on requested date? 
+    // Check if vendor is available on requested date?
     // This will be enforced in UI mainly, but good to have here eventually.
     await _firestore.collection('bookings').add(booking.toMap());
     _logAction('booking', 'Request sent', booking.vendorId);
@@ -58,13 +80,17 @@ class UserService {
 
   // Accept/Reject quotation
   Future<void> updateBookingStatus(String bookingId, String status) async {
-    await _firestore.collection('bookings').doc(bookingId).update({'status': status});
+    await _firestore.collection('bookings').doc(bookingId).update({
+      'status': status,
+    });
     _logAction('booking', 'User updated status to $status', bookingId);
   }
 
   // Soft delete booking
   Future<void> softDeleteBooking(String bookingId) async {
-    await _firestore.collection('bookings').doc(bookingId).update({'isActive': false});
+    await _firestore.collection('bookings').doc(bookingId).update({
+      'isActive': false,
+    });
   }
 
   // Get user's bookings
@@ -74,9 +100,11 @@ class UserService {
         .where('userId', isEqualTo: uid)
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => BookingModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => BookingModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
   }
 
   // Helper for audit logging (simplified for now)

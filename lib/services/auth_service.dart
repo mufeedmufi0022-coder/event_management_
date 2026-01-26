@@ -10,13 +10,18 @@ class AuthService {
   Stream<User?> get user => _auth.authStateChanges();
 
   // Register with email and password
-  Future<UserCredential?> registerWithEmail(String email, String password, String name, String role) async {
+  Future<UserCredential?> registerWithEmail(
+    String email,
+    String password,
+    String name,
+    String role,
+  ) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: email, 
-        password: password
+        email: email,
+        password: password,
       );
-      
+
       User? user = result.user;
       if (user != null) {
         // Create a new document for the user in firestore
@@ -41,7 +46,10 @@ class AuthService {
   // Login with email and password
   Future<UserCredential?> loginWithEmail(String email, String password) async {
     try {
-      return await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
     } on FirebaseAuthException catch (e) {
       print('Login Error: ${e.code}');
       rethrow;
@@ -55,23 +63,52 @@ class AuthService {
   Future<UserModel?> firestoreLogin(String email, String password) async {
     try {
       email = email.toLowerCase().trim();
-      print('Manual Firestore login check for: $email');
-      
+      print('=== FIRESTORE LOGIN ATTEMPT ===');
+      print('Email: $email');
+      print('Password length: ${password.length}');
+
       QuerySnapshot query = await _firestore
           .collection('users')
           .where('email', isEqualTo: email)
-          .where('password', isEqualTo: password)
           .get();
-      
-      if (query.docs.isNotEmpty) {
-        print('User found in Firestore via manual check');
-        return UserModel.fromMap(query.docs.first.data() as Map<String, dynamic>, query.docs.first.id);
+
+      print('Found ${query.docs.length} user(s) with email: $email');
+
+      if (query.docs.isEmpty) {
+        print('ERROR: No user found with this email');
+        return null;
       }
 
+      // Check each document for matching password
+      for (var doc in query.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        print('Checking user: ${data['name']} (${data['role']})');
+        print('Stored password: ${data['password']}');
+        print('Status: ${data['status']}');
+
+        if (data['password'] == password) {
+          print('✓ Password match!');
+
+          final user = UserModel.fromMap(data, doc.id);
+
+          // Check if vendor is approved
+          if (user.role == 'vendor' && user.status != 'approved') {
+            print('WARNING: Vendor account is ${user.status}');
+            throw 'Your vendor account is ${user.status}. Please wait for admin approval.';
+          }
+
+          print('✓ Login successful for ${user.role}');
+          return user;
+        } else {
+          print('✗ Password mismatch');
+        }
+      }
+
+      print('ERROR: Password did not match for any user with this email');
       return null;
     } catch (e) {
-      print('Firestore Login Error: $e');
-      return null;
+      print('FIRESTORE LOGIN ERROR: $e');
+      rethrow;
     }
   }
 
@@ -85,14 +122,20 @@ class AuthService {
   Future<UserModel?> getUserData(String uid) async {
     try {
       print('Fetching user data for UID: $uid');
-      
+
       // 1. Check users collection
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(uid)
+          .get();
       if (userDoc.exists) {
         print('Found in users collection');
-        return UserModel.fromMap(userDoc.data() as Map<String, dynamic>, userDoc.id);
+        return UserModel.fromMap(
+          userDoc.data() as Map<String, dynamic>,
+          userDoc.id,
+        );
       }
-      
+
       print('User not found in users collection');
       return null;
     } catch (e) {
@@ -116,13 +159,13 @@ class AuthService {
     try {
       final String adminEmail = 'admin@event.com';
       final String adminPassword = 'admin@123';
-      
+
       QuerySnapshot adminCheck = await _firestore
           .collection('users')
           .where('email', isEqualTo: adminEmail)
           .where('role', isEqualTo: 'admin')
           .get();
-      
+
       if (adminCheck.docs.isEmpty) {
         print('Initializing default admin in users collection...');
         await _firestore.collection('users').doc(adminEmail).set({
