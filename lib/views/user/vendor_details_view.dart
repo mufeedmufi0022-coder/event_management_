@@ -28,7 +28,10 @@ class VendorDetailsView extends StatelessWidget {
             expandedHeight: 250,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: ImageHelper.displayImage(vendor.logoUrl, fit: BoxFit.cover),
+              background: ImageHelper.displayImage(
+                vendor.logoUrl,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -44,8 +47,24 @@ class VendorDetailsView extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(vendor.businessName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                            Text(vendor.serviceType, style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.w500)),
+                            Text(
+                              vendor.businessName,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              vendor.products
+                                  .map((p) => p.categoryType)
+                                  .where((c) => c != null && c.isNotEmpty)
+                                  .toSet()
+                                  .join(', '),
+                              style: const TextStyle(
+                                color: Color(0xFF904CC1),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -53,11 +72,23 @@ class VendorDetailsView extends StatelessWidget {
                         CircleAvatar(
                           backgroundColor: Colors.white,
                           child: IconButton(
-                            icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF904CC1)),
+                            icon: const Icon(
+                              Icons.chat_bubble_outline,
+                              color: Color(0xFF904CC1),
+                            ),
                             onPressed: () async {
-                              String chatId = await chatProvider.startChat(user!.uid, vendor.vendorId);
+                              String chatId = await chatProvider.startChat(
+                                user!.uid,
+                                vendor.vendorId,
+                              );
                               if (context.mounted) {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId)));
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ChatView(chatId: chatId),
+                                  ),
+                                );
                               }
                             },
                           ),
@@ -67,73 +98,135 @@ class VendorDetailsView extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildSectionTitle('About'),
                   const SizedBox(height: 8),
-                  Text(vendor.description, style: const TextStyle(color: Colors.grey, height: 1.5)),
+                  Text(
+                    vendor.description,
+                    style: const TextStyle(color: Colors.grey, height: 1.5),
+                  ),
                   const SizedBox(height: 24),
                   _buildSectionTitle('Location'),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(vendor.location, style: const TextStyle(color: Colors.grey))),
+                      Expanded(
+                        child: Text(
+                          vendor.location,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 32),
                   _buildSectionTitle('Products & Services'),
                   const SizedBox(height: 16),
                   vendor.products.isEmpty
-                    ? const Text('No products listed', style: TextStyle(color: Colors.grey))
-                    : GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.8,
-                        ),
-                        itemCount: vendor.products.length,
-                        itemBuilder: (context, index) {
-                          final p = vendor.products[index];
-                          return GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => ProductDetailView(product: p, vendor: vendor)),
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)), child: ImageHelper.displayImage(p.images.isNotEmpty ? p.images.first : '', fit: BoxFit.cover, width: double.infinity))),
-                                  Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          p.priceType == 'per_person' ? '₹${p.price}/person' : '₹${p.price}',
-                                          style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.bold)
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.star, size: 12, color: Colors.amber),
-                                            const SizedBox(width: 4),
-                                            Text(p.averageRating.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                      ? const Text(
+                          'No products listed',
+                          style: TextStyle(color: Colors.grey),
+                        )
+                      : GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 0.8,
                               ),
-                            ),
-                          );
-                        },
-                      ),
+                          itemCount: vendor.products.length,
+                          itemBuilder: (context, index) {
+                            final p = vendor.products[index];
+                            return GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProductDetailView(
+                                    product: p,
+                                    vendor: vendor,
+                                  ),
+                                ),
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: ClipRRect(
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(16),
+                                            ),
+                                        child: ImageHelper.displayImage(
+                                          p.images.isNotEmpty
+                                              ? p.images.first
+                                              : '',
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            p.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            p.priceType == 'per_person'
+                                                ? '₹${p.price}/person'
+                                                : '₹${p.price}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF904CC1),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.star,
+                                                size: 12,
+                                                color: Colors.amber,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                p.averageRating.toStringAsFixed(
+                                                  1,
+                                                ),
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                   const SizedBox(height: 100),
                 ],
               ),
@@ -141,27 +234,52 @@ class VendorDetailsView extends StatelessWidget {
           ),
         ],
       ),
-      bottomSheet: (user?.uid == vendor.vendorId) 
-        ? null 
-        : Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-            child: ElevatedButton(
-              onPressed: () => _showBookingDialog(context, vendor, userProvider, user!.uid),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF904CC1),
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      bottomSheet: (user?.uid == vendor.vendorId)
+          ? null
+          : Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: const Text('Book Now', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+              child: ElevatedButton(
+                onPressed: () => _showBookingDialog(
+                  context,
+                  vendor,
+                  userProvider,
+                  user!.uid,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF904CC1),
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Book Now',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
-          ),
     );
   }
 
-  Widget _buildSectionTitle(String title) => Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+  Widget _buildSectionTitle(String title) => Text(
+    title,
+    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  );
 
-  void _showBookingDialog(BuildContext context, VendorModel vendor, UserProvider userProvider, String userId) async {
+  void _showBookingDialog(
+    BuildContext context,
+    VendorModel vendor,
+    UserProvider userProvider,
+    String userId,
+  ) async {
     DateTime? selectedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 1)),
@@ -186,11 +304,13 @@ class VendorDetailsView extends StatelessWidget {
     if (!context.mounted) return;
 
     final occasionController = TextEditingController();
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -202,17 +322,27 @@ class VendorDetailsView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Complete Booking', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text(
+              'Complete Booking',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
-            Text('Selected Date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}', 
-                style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.bold)),
+            Text(
+              'Selected Date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+              style: const TextStyle(
+                color: Color(0xFF904CC1),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 24),
             TextField(
               controller: occasionController,
               decoration: InputDecoration(
                 labelText: 'What\'s the occasion?',
                 hintText: 'e.g. Wedding, Birthday, Corporate Event',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -224,7 +354,9 @@ class VendorDetailsView extends StatelessWidget {
                   userId: userId,
                   status: 'requested',
                   bookingDate: selectedDate,
-                  occasion: occasionController.text.trim().isEmpty ? 'General' : occasionController.text.trim(),
+                  occasion: occasionController.text.trim().isEmpty
+                      ? 'General'
+                      : occasionController.text.trim(),
                 );
                 await userProvider.sendBookingRequest(booking);
                 if (context.mounted) {
@@ -233,16 +365,24 @@ class VendorDetailsView extends StatelessWidget {
                     const SnackBar(
                       content: Text('Booking request sent successfully!'),
                       backgroundColor: Colors.green,
-                    )
+                    ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF904CC1),
                 minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Confirm Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Confirm Request',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
           ],

@@ -69,7 +69,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF904CC1),
         foregroundColor: Colors.white,
-        title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+        title: Text(
+          _titles[_selectedIndex],
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
         actions: [
@@ -110,13 +116,28 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           selectedItemColor: const Color(0xFF904CC1),
           unselectedItemColor: Colors.grey[400],
           showUnselectedLabels: true,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
+          ),
           unselectedLabelStyle: const TextStyle(fontSize: 10),
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.apps_rounded), label: 'Stats'),
-            BottomNavigationBarItem(icon: Icon(Icons.event_note_outlined), label: 'Bookings'),
-            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Support'),
-            BottomNavigationBarItem(icon: Icon(Icons.history_rounded), label: 'Logs'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.apps_rounded),
+              label: 'Stats',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.event_note_outlined),
+              label: 'Bookings',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              label: 'Support',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history_rounded),
+              label: 'Logs',
+            ),
           ],
         ),
       ),
@@ -128,7 +149,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Exit Session?'),
-        content: const Text('Are you sure you want to log out of the admin console?'),
+        content: const Text(
+          'Are you sure you want to log out of the admin console?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -139,7 +162,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               Navigator.pop(context);
               Provider.of<AuthProvider>(context, listen: false).logout();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Logout'),
           ),
         ],
@@ -163,28 +189,40 @@ class AdminHomeTab extends StatelessWidget {
         children: [
           const Text(
             'System Overview',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A)),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4A4A4A),
+            ),
           ),
           const SizedBox(height: 20),
           _buildSummaryCard(
-            'Active Users', 
-            counts['users'].toString(), 
-            Icons.group, 
+            'Active Users',
+            counts['users'].toString(),
+            Icons.group,
             const Color(0xFF3498DB),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const DirectoryPage(role: 'user', title: 'User Directory')),
+              MaterialPageRoute(
+                builder: (context) =>
+                    const DirectoryPage(role: 'user', title: 'User Directory'),
+              ),
             ),
           ),
           const SizedBox(height: 16),
           _buildSummaryCard(
-            'Business Partners', 
-            counts['vendors'].toString(), 
-            Icons.handshake, 
+            'Business Partners',
+            counts['vendors'].toString(),
+            Icons.handshake,
             const Color(0xFF2ECC71),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const DirectoryPage(role: 'vendor', title: 'Partner Directory')),
+              MaterialPageRoute(
+                builder: (context) => const DirectoryPage(
+                  role: 'vendor',
+                  title: 'Partner Directory',
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -192,17 +230,23 @@ class AdminHomeTab extends StatelessWidget {
           const SizedBox(height: 32),
           const Text(
             'Quick Actions',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A)),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4A4A4A),
+            ),
           ),
           const SizedBox(height: 16),
           _buildQuickAction(
-            context, 
-            'Pending Approvals', 
-            Icons.pending_actions, 
+            context,
+            'Pending Approvals',
+            Icons.pending_actions,
             Colors.purple,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const PendingApprovalsView()),
+              MaterialPageRoute(
+                builder: (context) => const PendingApprovalsView(),
+              ),
             ),
           ),
         ],
@@ -218,7 +262,9 @@ class AdminHomeTab extends StatelessWidget {
     // Map vendor IDs to categories and get all unique categories in system
     final systemCategories = users
         .where((u) => u.role == 'vendor')
-        .map((u) => u.serviceType ?? 'General')
+        .expand((u) => u.products.map((p) => p.categoryType))
+        .where((c) => c != null && c.isNotEmpty)
+        .cast<String>()
         .toSet()
         .toList();
 
@@ -226,7 +272,19 @@ class AdminHomeTab extends StatelessWidget {
 
     final vendorCategories = {
       for (var u in users.where((u) => u.role == 'vendor'))
-        u.uid: u.serviceType ?? 'General'
+        u.uid:
+            u.products
+                .map((p) => p.categoryType)
+                .where((c) => c != null && c.isNotEmpty)
+                .toSet()
+                .join(', ')
+                .isEmpty
+            ? 'General'
+            : u.products
+                  .map((p) => p.categoryType)
+                  .where((c) => c != null && c.isNotEmpty)
+                  .toSet()
+                  .first,
     };
 
     // Group bookings by category
@@ -266,7 +324,11 @@ class AdminHomeTab extends StatelessWidget {
         children: [
           const Text(
             'Booking Distribution',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A)),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4A4A4A),
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -292,26 +354,33 @@ class AdminHomeTab extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[400],
                           ),
-                        )
+                        ),
                       ]
-                    : sortedCategories.where((e) => e.value > 0).toList().asMap().entries.map((entry) {
-                        final idx = entry.key;
-                        final category = entry.value.key;
-                        final count = entry.value.value;
-                        final percentage = (count / bookings.length * 100).toStringAsFixed(1);
+                    : sortedCategories
+                          .where((e) => e.value > 0)
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                            final idx = entry.key;
+                            final category = entry.value.key;
+                            final count = entry.value.value;
+                            final percentage = (count / bookings.length * 100)
+                                .toStringAsFixed(1);
 
-                        return PieChartSectionData(
-                          color: colors[idx % colors.length],
-                          value: count.toDouble(),
-                          title: '$percentage%',
-                          radius: 60,
-                          titleStyle: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        );
-                      }).toList(),
+                            return PieChartSectionData(
+                              color: colors[idx % colors.length],
+                              value: count.toDouble(),
+                              title: '$percentage%',
+                              radius: 60,
+                              titleStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            );
+                          })
+                          .toList(),
               ),
             ),
           ),
@@ -339,7 +408,11 @@ class AdminHomeTab extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     '$category ($count)',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               );
@@ -350,7 +423,13 @@ class AdminHomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color, {VoidCallback? onTap}) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -358,21 +437,39 @@ class AdminHomeTab extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(icon, color: color, size: 30),
             ),
             const SizedBox(width: 20),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-                Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
             const Spacer(),
@@ -383,7 +480,13 @@ class AdminHomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickAction(BuildContext context, String title, IconData icon, Color color, {VoidCallback? onTap}) {
+  Widget _buildQuickAction(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -429,11 +532,25 @@ class PeopleListTab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(role == 'user' ? Icons.person_off : (role == 'vendor' ? Icons.store_outlined : Icons.storage_rounded), size: 64, color: Colors.grey[300]),
+            Icon(
+              role == 'user'
+                  ? Icons.person_off
+                  : (role == 'vendor'
+                        ? Icons.store_outlined
+                        : Icons.storage_rounded),
+              size: 64,
+              color: Colors.grey[300],
+            ),
             const SizedBox(height: 16),
-            Text('No ${role == 'all' ? 'records' : role + 's'} found.', style: const TextStyle(color: Colors.grey)),
+            Text(
+              'No ${role == 'all' ? 'records' : role + 's'} found.',
+              style: const TextStyle(color: Colors.grey),
+            ),
             const SizedBox(height: 8),
-            Text('Total records in system: ${adminProvider.allUsers.length}', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+            Text(
+              'Total records in system: ${adminProvider.allUsers.length}',
+              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+            ),
           ],
         ),
       );
@@ -449,19 +566,32 @@ class PeopleListTab extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 12,
+            ),
             leading: CircleAvatar(
-              backgroundColor: role == 'user' ? Colors.blue[50] : Colors.purple[50],
+              backgroundColor: role == 'user'
+                  ? Colors.blue[50]
+                  : Colors.purple[50],
               child: Icon(
                 role == 'user' ? Icons.person : Icons.store,
                 color: role == 'user' ? Colors.blue : Colors.purple,
               ),
             ),
             title: Text(
-              person.businessName?.isNotEmpty == true ? person.businessName! : person.name,
+              person.businessName?.isNotEmpty == true
+                  ? person.businessName!
+                  : person.name,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             subtitle: Padding(
@@ -469,36 +599,80 @@ class PeopleListTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (role == 'vendor' && person.serviceType != null)
+                  if (role == 'vendor' && person.products.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4.0),
                       child: Text(
-                        person.serviceType!,
-                        style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.w600, fontSize: 13),
+                        person.products
+                            .map((p) => p.categoryType)
+                            .where((c) => c != null && c.isNotEmpty)
+                            .toSet()
+                            .join(', '),
+                        style: const TextStyle(
+                          color: Color(0xFF904CC1),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   Row(
                     children: [
-                      const Icon(Icons.email_outlined, size: 14, color: Colors.grey),
+                      const Icon(
+                        Icons.email_outlined,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 6),
-                      Expanded(child: Text(person.email, style: const TextStyle(fontSize: 13, color: Colors.grey))),
+                      Expanded(
+                        child: Text(
+                          person.email,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.phone_outlined, size: 14, color: Colors.grey),
+                      const Icon(
+                        Icons.phone_outlined,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 6),
-                      Text(person.contactNumber ?? 'N/A', style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                      Text(
+                        person.contactNumber ?? 'N/A',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
                     ],
                   ),
                   if (role == 'vendor' && person.location != null) ...[
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 6),
-                        Expanded(child: Text(person.location!, style: const TextStyle(fontSize: 13, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        Expanded(
+                          child: Text(
+                            person.location!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -511,38 +685,72 @@ class PeopleListTab extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF904CC1)),
+                  icon: const Icon(
+                    Icons.chat_bubble_outline,
+                    color: Color(0xFF904CC1),
+                  ),
                   onPressed: () async {
-                    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-                    final admin = Provider.of<AuthProvider>(context, listen: false).userModel;
+                    final chatProvider = Provider.of<ChatProvider>(
+                      context,
+                      listen: false,
+                    );
+                    final admin = Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    ).userModel;
                     if (admin != null) {
-                      String chatId = await chatProvider.startChat(admin.uid, person.uid);
+                      String chatId = await chatProvider.startChat(
+                        admin.uid,
+                        person.uid,
+                      );
                       if (context.mounted) {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(
-                          chatId: chatId, 
-                          title: person.businessName?.isNotEmpty == true ? person.businessName : person.name
-                        )));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatView(
+                              chatId: chatId,
+                              title: person.businessName?.isNotEmpty == true
+                                  ? person.businessName
+                                  : person.name,
+                            ),
+                          ),
+                        );
                       }
                     }
                   },
                 ),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert_rounded),
-                  onSelected: (status) => adminProvider.updateStatus(person.uid, status),
+                  onSelected: (status) =>
+                      adminProvider.updateStatus(person.uid, status),
                   itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'approved', child: Text('Approve Account')),
-                    const PopupMenuItem(value: 'pending', child: Text('Set Pending')),
-                    const PopupMenuItem(value: 'blocked', child: Text('Block Access')),
+                    const PopupMenuItem(
+                      value: 'approved',
+                      child: Text('Approve Account'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'pending',
+                      child: Text('Set Pending'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'blocked',
+                      child: Text('Block Access'),
+                    ),
                   ],
                 ),
               ],
             ),
-            onTap: role == 'vendor' ? () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => VendorDetailAdminView(vendorUser: person)),
-              );
-            } : null,
+            onTap: role == 'vendor'
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            VendorDetailAdminView(vendorUser: person),
+                      ),
+                    );
+                  }
+                : null,
           ),
         );
       },
@@ -552,9 +760,14 @@ class PeopleListTab extends StatelessWidget {
   Widget _buildStatusBadge(String status) {
     Color color;
     switch (status) {
-      case 'approved': color = Colors.green; break;
-      case 'blocked': color = Colors.red; break;
-      default: color = Colors.orange;
+      case 'approved':
+        color = Colors.green;
+        break;
+      case 'blocked':
+        color = Colors.red;
+        break;
+      default:
+        color = Colors.orange;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -564,7 +777,11 @@ class PeopleListTab extends StatelessWidget {
       ),
       child: Text(
         status.toUpperCase(),
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -591,7 +808,9 @@ class AdminBookingsTab extends StatelessWidget {
         final b = bookings[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -599,14 +818,26 @@ class AdminBookingsTab extends StatelessWidget {
                 if (b.productImage != null && b.productImage!.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: ImageHelper.displayImage(b.productImage, width: 60, height: 60, fit: BoxFit.cover),
+                    child: ImageHelper.displayImage(
+                      b.productImage,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                    ),
                   )
                 else
                   Container(
                     width: 60,
                     height: 60,
-                    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.image, color: Colors.grey, size: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.image,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
                   ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -621,11 +852,18 @@ class AdminBookingsTab extends StatelessWidget {
                       ),
                       Text(
                         'User: ${b.userId.substring(0, 5)} | Vendor: ${b.vendorId.substring(0, 5)}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
                       Text(
                         'Status: ${b.status.toUpperCase()}',
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF904CC1)),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF904CC1),
+                        ),
                       ),
                     ],
                   ),
@@ -634,34 +872,91 @@ class AdminBookingsTab extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.person_search_outlined, color: Colors.blue, size: 20),
+                      icon: const Icon(
+                        Icons.person_search_outlined,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
                       onPressed: () async {
-                        final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-                        final adminId = Provider.of<AuthProvider>(context, listen: false).userModel?.uid;
+                        final chatProvider = Provider.of<ChatProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final adminId = Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        ).userModel?.uid;
                         if (adminId != null) {
-                          String chatId = await chatProvider.startChat(adminId, b.userId);
-                          if (context.mounted) Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId, title: 'Chat with User')));
+                          String chatId = await chatProvider.startChat(
+                            adminId,
+                            b.userId,
+                          );
+                          if (context.mounted)
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatView(
+                                  chatId: chatId,
+                                  title: 'Chat with User',
+                                ),
+                              ),
+                            );
                         }
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.storefront_outlined, color: Colors.purple, size: 20),
+                      icon: const Icon(
+                        Icons.storefront_outlined,
+                        color: Colors.purple,
+                        size: 20,
+                      ),
                       onPressed: () async {
-                        final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-                        final adminId = Provider.of<AuthProvider>(context, listen: false).userModel?.uid;
+                        final chatProvider = Provider.of<ChatProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final adminId = Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        ).userModel?.uid;
                         if (adminId != null) {
-                          String chatId = await chatProvider.startChat(adminId, b.vendorId);
-                          if (context.mounted) Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId, title: 'Chat with Vendor')));
+                          String chatId = await chatProvider.startChat(
+                            adminId,
+                            b.vendorId,
+                          );
+                          if (context.mounted)
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatView(
+                                  chatId: chatId,
+                                  title: 'Chat with Vendor',
+                                ),
+                              ),
+                            );
                         }
                       },
                     ),
                     PopupMenuButton<String>(
-                      icon: const Icon(Icons.settings_suggest_outlined, size: 20),
-                      onSelected: (val) => provider.manualOverrideBooking(b.bookingId, val),
+                      icon: const Icon(
+                        Icons.settings_suggest_outlined,
+                        size: 20,
+                      ),
+                      onSelected: (val) =>
+                          provider.manualOverrideBooking(b.bookingId, val),
                       itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'accepted', child: Text('Force Accept')),
-                        const PopupMenuItem(value: 'cancelled', child: Text('Force Cancel')),
-                        const PopupMenuItem(value: 'completed', child: Text('Mark Complete')),
+                        const PopupMenuItem(
+                          value: 'accepted',
+                          child: Text('Force Accept'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'cancelled',
+                          child: Text('Force Cancel'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'completed',
+                          child: Text('Mark Complete'),
+                        ),
                       ],
                     ),
                   ],
@@ -708,7 +1003,13 @@ class AdminLogsTab extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(log.action, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+                    Text(
+                      log.action,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       '${log.type.toUpperCase()} • ${log.timestamp.toLocal().toString().split('.')[0]}',

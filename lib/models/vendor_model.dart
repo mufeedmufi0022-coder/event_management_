@@ -112,7 +112,6 @@ class ProductModel {
 class VendorModel {
   final String vendorId;
   final String businessName;
-  final String serviceType;
   final String location;
   final String priceRange;
   final String description;
@@ -128,7 +127,6 @@ class VendorModel {
   VendorModel({
     required this.vendorId,
     required this.businessName,
-    required this.serviceType,
     required this.location,
     required this.priceRange,
     required this.description,
@@ -163,7 +161,6 @@ class VendorModel {
       vendorId: id,
       businessName:
           data['businessName'] ?? data['name'] ?? '', // Fallback to 'name'
-      serviceType: data['serviceType'] ?? '',
       location: data['location'] ?? '',
       priceRange:
           data['priceRange'] ??
@@ -184,7 +181,6 @@ class VendorModel {
   Map<String, dynamic> toMap() {
     return {
       'businessName': businessName,
-      'serviceType': serviceType,
       'location': location,
       'priceRange': priceRange,
       'description': description,

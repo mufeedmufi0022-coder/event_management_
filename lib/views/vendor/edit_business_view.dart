@@ -21,38 +21,46 @@ class _EditBusinessViewState extends State<EditBusinessView> {
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
   final _storageService = StorageService();
-  
+
   late TextEditingController _nameController;
   late TextEditingController _locationController;
   late TextEditingController _priceController;
   late TextEditingController _descriptionController;
   late TextEditingController _contactController;
-  
-  String? _selectedType;
+
   String? _logoUrl;
   List<ProductModel> _products = [];
   LatLng _selectedLatLng = const LatLng(10.8505, 76.2711);
   bool _isUploading = false;
 
   final List<String> _serviceTypes = [
-    'Convention Center', 'Food', 'Decoration', 'Vehicle', 'Catering', 'Photography', 'Music/DJ'
+    'Convention Center',
+    'Food',
+    'Decoration',
+    'Vehicle',
+    'Catering',
+    'Photography',
+    'Music/DJ',
   ];
 
   @override
   void initState() {
     super.initState();
-    final vendor = Provider.of<VendorProvider>(context, listen: false).vendorModel;
+    final vendor = Provider.of<VendorProvider>(
+      context,
+      listen: false,
+    ).vendorModel;
     _nameController = TextEditingController(text: vendor?.businessName ?? '');
     _locationController = TextEditingController(text: vendor?.location ?? '');
     _priceController = TextEditingController(text: vendor?.priceRange ?? '');
-    _descriptionController = TextEditingController(text: vendor?.description ?? '');
-    _contactController = TextEditingController(text: vendor?.contactNumber ?? '');
+    _descriptionController = TextEditingController(
+      text: vendor?.description ?? '',
+    );
+    _contactController = TextEditingController(
+      text: vendor?.contactNumber ?? '',
+    );
     _logoUrl = vendor?.logoUrl;
     _products = List.from(vendor?.products ?? []);
-    
-    if (vendor?.serviceType != null && _serviceTypes.contains(vendor!.serviceType)) {
-      _selectedType = vendor.serviceType;
-    }
   }
 
   Future<ImageSource?> _showImageSourceDialog() async {
@@ -93,7 +101,11 @@ class _EditBusinessViewState extends State<EditBusinessView> {
     );
   }
 
-  Widget _buildSourceOption({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -119,13 +131,16 @@ class _EditBusinessViewState extends State<EditBusinessView> {
 
     final XFile? image = await _picker.pickImage(
       source: source,
-      imageQuality: 25,
-      maxWidth: 500,
-      maxHeight: 500,
+      imageQuality: 10,
+      maxWidth: 300,
+      maxHeight: 300,
     );
     if (image != null) {
       setState(() => _isUploading = true);
-      String? url = await _storageService.uploadImage('logos', File(image.path));
+      String? url = await _storageService.uploadImage(
+        'logos',
+        File(image.path),
+      );
       if (url != null) {
         setState(() => _logoUrl = url);
       }
@@ -136,8 +151,11 @@ class _EditBusinessViewState extends State<EditBusinessView> {
   void _editProduct({ProductModel? product, int? index}) {
     String name = product?.name ?? '';
     String price = product?.price ?? '';
-    List<String> images = product?.images != null ? List.from(product!.images) : [];
+    List<String> images = product?.images != null
+        ? List.from(product!.images)
+        : [];
     String? priceType = product?.priceType ?? 'fixed';
+    String? categoryType = product?.categoryType;
     int? capacity = product?.capacity;
     String? mobileNumber = product?.mobileNumber;
     String? location = product?.location;
@@ -168,8 +186,13 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      product == null ? 'Add Product/Service' : 'Edit Product/Service',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      product == null
+                          ? 'Add Product/Service'
+                          : 'Edit Product/Service',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
@@ -178,7 +201,13 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text('Images (Select multiple)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                const Text(
+                  'Images (Select multiple)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 100,
@@ -191,10 +220,18 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                           onTap: () async {
                             final source = await _showImageSourceDialog();
                             if (source == null) return;
-                            final XFile? image = await _picker.pickImage(source: source, imageQuality: 25);
+                            final XFile? image = await _picker.pickImage(
+                              source: source,
+                              imageQuality: 10,
+                              maxWidth: 300,
+                              maxHeight: 300,
+                            );
                             if (image != null) {
                               setDialogState(() => _isUploading = true);
-                              String? url = await _storageService.uploadImage('products', File(image.path));
+                              String? url = await _storageService.uploadImage(
+                                'products',
+                                File(image.path),
+                              );
                               setDialogState(() {
                                 if (url != null) images.add(url);
                                 _isUploading = false;
@@ -207,9 +244,14 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFF1F4F8),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFF904CC1).withOpacity(0.1)),
+                              border: Border.all(
+                                color: const Color(0xFF904CC1).withOpacity(0.1),
+                              ),
                             ),
-                            child: const Icon(Icons.add_a_photo_outlined, color: Color(0xFF904CC1)),
+                            child: const Icon(
+                              Icons.add_a_photo_outlined,
+                              color: Color(0xFF904CC1),
+                            ),
                           ),
                         );
                       }
@@ -221,8 +263,12 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               image: DecorationImage(
-                                image: ImageHelper.getImageProvider(images[idx]) ?? const NetworkImage('https://via.placeholder.com/150'), 
-                                fit: BoxFit.cover
+                                image:
+                                    ImageHelper.getImageProvider(images[idx]) ??
+                                    const NetworkImage(
+                                      'https://via.placeholder.com/150',
+                                    ),
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
@@ -230,8 +276,17 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                             top: 4,
                             right: 16,
                             child: GestureDetector(
-                              onTap: () => setDialogState(() => images.removeAt(idx)),
-                              child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white)),
+                              onTap: () =>
+                                  setDialogState(() => images.removeAt(idx)),
+                              child: const CircleAvatar(
+                                radius: 10,
+                                backgroundColor: Colors.red,
+                                child: Icon(
+                                  Icons.close,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -239,21 +294,59 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                     },
                   ),
                 ),
-                if (_isUploading) const Padding(padding: EdgeInsets.all(8.0), child: Center(child: CircularProgressIndicator())),
+                if (_isUploading)
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                 const SizedBox(height: 24),
-                _buildTextFieldInPopup('Item Name', (v) => name = v, Icons.shopping_bag_outlined, initialValue: name),
+                _buildTextFieldInPopup(
+                  'Item Name',
+                  (v) => name = v,
+                  Icons.shopping_bag_outlined,
+                  initialValue: name,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: categoryType,
+                  decoration: _inputDecoration(
+                    'Service Category',
+                    Icons.category,
+                  ),
+                  items: _serviceTypes
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
+                  onChanged: (v) => setDialogState(() => categoryType = v),
+                ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildTextFieldInPopup('Price (₹)', (v) => price = v, Icons.payments_outlined, keyboardType: TextInputType.number, initialValue: price)),
+                    Expanded(
+                      child: _buildTextFieldInPopup(
+                        'Price (₹)',
+                        (v) => price = v,
+                        Icons.payments_outlined,
+                        keyboardType: TextInputType.number,
+                        initialValue: price,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: priceType,
-                        decoration: _inputDecoration('Pricing Type', Icons.sell_outlined),
+                        decoration: _inputDecoration(
+                          'Pricing Type',
+                          Icons.sell_outlined,
+                        ),
                         items: const [
-                          DropdownMenuItem(value: 'fixed', child: Text('Fixed')),
-                          DropdownMenuItem(value: 'per_person', child: Text('Per Person')),
+                          DropdownMenuItem(
+                            value: 'fixed',
+                            child: Text('Fixed'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'per_person',
+                            child: Text('Per Person'),
+                          ),
                         ],
                         onChanged: (v) => setDialogState(() => priceType = v),
                       ),
@@ -263,29 +356,59 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildTextFieldInPopup('Capacity', (v) => capacity = int.tryParse(v), Icons.people_outline, keyboardType: TextInputType.number, initialValue: capacity?.toString() ?? '')),
+                    Expanded(
+                      child: _buildTextFieldInPopup(
+                        'Capacity',
+                        (v) => capacity = int.tryParse(v),
+                        Icons.people_outline,
+                        keyboardType: TextInputType.number,
+                        initialValue: capacity?.toString() ?? '',
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildTextFieldInPopup('Mobile', (v) => mobileNumber = v, Icons.phone_android_outlined, keyboardType: TextInputType.phone, initialValue: mobileNumber ?? '')),
+                    Expanded(
+                      child: _buildTextFieldInPopup(
+                        'Mobile',
+                        (v) => mobileNumber = v,
+                        Icons.phone_android_outlined,
+                        keyboardType: TextInputType.phone,
+                        initialValue: mobileNumber ?? '',
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                _buildTextFieldInPopup('Specific Location', (v) => location = v, Icons.location_on_outlined, initialValue: location ?? ''),
+                _buildTextFieldInPopup(
+                  'Specific Location',
+                  (v) => location = v,
+                  Icons.location_on_outlined,
+                  initialValue: location ?? '',
+                ),
                 const SizedBox(height: 16),
-                if (_selectedType == 'Vehicle')
+                if (categoryType == 'Vehicle')
                   DropdownButtonFormField<String>(
                     value: subType,
-                    decoration: _inputDecoration('Car Class', Icons.directions_car_outlined),
+                    decoration: _inputDecoration(
+                      'Car Class',
+                      Icons.directions_car_outlined,
+                    ),
                     items: const [
-                      DropdownMenuItem(value: 'Premium', child: Text('Premium')),
+                      DropdownMenuItem(
+                        value: 'Premium',
+                        child: Text('Premium'),
+                      ),
                       DropdownMenuItem(value: 'Medium', child: Text('Medium')),
                       DropdownMenuItem(value: 'Normal', child: Text('Normal')),
                     ],
                     onChanged: (v) => setDialogState(() => subType = v),
                   ),
-                if (_selectedType == 'Food' || _selectedType == 'Catering')
+                if (categoryType == 'Food' || categoryType == 'Catering')
                   DropdownButtonFormField<String>(
                     value: subType,
-                    decoration: _inputDecoration('Service Type', Icons.restaurant_outlined),
+                    decoration: _inputDecoration(
+                      'Service Type',
+                      Icons.restaurant_outlined,
+                    ),
                     items: const [
                       DropdownMenuItem(value: 'Buffet', child: Text('Buffet')),
                       DropdownMenuItem(value: 'Normal', child: Text('Normal')),
@@ -294,38 +417,51 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                   ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: images.isNotEmpty && name.isNotEmpty ? () {
-                    setState(() {
-                      final newProduct = ProductModel(
-                        images: images,
-                        price: price,
-                        name: name,
-                        capacity: capacity,
-                        mobileNumber: mobileNumber,
-                        location: location,
-                        priceType: priceType,
-                        categoryType: _selectedType,
-                        subType: subType,
-                        blockedDates: product?.blockedDates ?? [],
-                        bookedDates: product?.bookedDates ?? [],
-                        ratings: product?.ratings ?? [],
-                      );
-                      if (product == null) {
-                        _products.add(newProduct);
-                      } else {
-                        _products[index!] = newProduct;
-                      }
-                    });
-                    Navigator.pop(context);
-                  } : null,
+                  onPressed:
+                      images.isNotEmpty &&
+                          name.isNotEmpty &&
+                          categoryType != null
+                      ? () {
+                          setState(() {
+                            final newProduct = ProductModel(
+                              images: images,
+                              price: price,
+                              name: name,
+                              capacity: capacity,
+                              mobileNumber: mobileNumber,
+                              location: location,
+                              priceType: priceType,
+                              categoryType: categoryType,
+                              subType: subType,
+                              blockedDates: product?.blockedDates ?? [],
+                              bookedDates: product?.bookedDates ?? [],
+                              ratings: product?.ratings ?? [],
+                            );
+                            if (product == null) {
+                              _products.add(newProduct);
+                            } else {
+                              _products[index!] = newProduct;
+                            }
+                          });
+                          Navigator.pop(context);
+                        }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF904CC1),
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 0,
                   ),
-                  child: Text(product == null ? 'Add Product' : 'Update Product', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text(
+                    product == null ? 'Add Product' : 'Update Product',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -335,7 +471,13 @@ class _EditBusinessViewState extends State<EditBusinessView> {
     );
   }
 
-  Widget _buildTextFieldInPopup(String label, Function(String) onChanged, IconData icon, {TextInputType keyboardType = TextInputType.text, String initialValue = ''}) {
+  Widget _buildTextFieldInPopup(
+    String label,
+    Function(String) onChanged,
+    IconData icon, {
+    TextInputType keyboardType = TextInputType.text,
+    String initialValue = '',
+  }) {
     return TextFormField(
       initialValue: initialValue,
       onChanged: onChanged,
@@ -345,8 +487,14 @@ class _EditBusinessViewState extends State<EditBusinessView> {
         prefixIcon: Icon(icon, color: Colors.grey),
         filled: true,
         fillColor: const Color(0xFFF1F4F8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
       ),
     );
   }
@@ -354,12 +502,14 @@ class _EditBusinessViewState extends State<EditBusinessView> {
   void _save() async {
     if (_formKey.currentState!.validate()) {
       final user = Provider.of<AuthProvider>(context, listen: false).userModel;
-      final vendorProvider = Provider.of<VendorProvider>(context, listen: false);
+      final vendorProvider = Provider.of<VendorProvider>(
+        context,
+        listen: false,
+      );
 
       final vendor = VendorModel(
         vendorId: user!.uid,
         businessName: _nameController.text.trim(),
-        serviceType: _selectedType ?? '',
         location: _locationController.text.trim(),
         priceRange: _priceController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -380,7 +530,10 @@ class _EditBusinessViewState extends State<EditBusinessView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F8),
       appBar: AppBar(
-        title: const Text('Business Registry', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Business Registry',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -401,39 +554,59 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                       child: CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.white,
-                        backgroundImage: _logoUrl != null ? ImageHelper.getImageProvider(_logoUrl!) : null,
-                        child: _logoUrl == null 
-                          ? const Icon(Icons.add_business_rounded, size: 40, color: Color(0xFF904CC1))
-                          : null,
+                        backgroundImage: _logoUrl != null
+                            ? ImageHelper.getImageProvider(_logoUrl!)
+                            : null,
+                        child: _logoUrl == null
+                            ? const Icon(
+                                Icons.add_business_rounded,
+                                size: 40,
+                                color: Color(0xFF904CC1),
+                              )
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text('Company Logo', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const Text(
+                      'Company Logo',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-              
-              const Text('General Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+
+              const Text(
+                'General Details',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
               const SizedBox(height: 16),
               _buildCard([
-                _buildTextField(_nameController, 'Business Name', Icons.business),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _selectedType,
-                  decoration: _inputDecoration('Service Category', Icons.category),
-                  items: _serviceTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-                  onChanged: (v) => setState(() => _selectedType = v),
+                _buildTextField(
+                  _nameController,
+                  'Business Name',
+                  Icons.business,
                 ),
                 const SizedBox(height: 16),
-                _buildTextField(_contactController, 'Contact Number', Icons.phone, keyboardType: TextInputType.phone),
+                _buildTextField(
+                  _contactController,
+                  'Contact Number',
+                  Icons.phone,
+                  keyboardType: TextInputType.phone,
+                ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _locationController,
                   readOnly: true,
                   onTap: () async {
                     final result = await Navigator.push<LocationResult>(
-                      context, MaterialPageRoute(builder: (context) => const LocationPickerView())
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LocationPickerView(),
+                      ),
                     );
                     if (result != null) {
                       setState(() {
@@ -445,18 +618,30 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                   decoration: _inputDecoration('Business Location', Icons.map),
                 ),
               ]),
-              
+
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Products & Services', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  TextButton.icon(onPressed: () => _editProduct(), icon: const Icon(Icons.add), label: const Text('Add New')),
+                  const Text(
+                    'Products & Services',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _editProduct(),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add New'),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
               if (_products.isEmpty)
-                const Center(child: Text('No products added yet', style: TextStyle(color: Colors.grey)))
+                const Center(
+                  child: Text(
+                    'No products added yet',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
               else
                 SizedBox(
                   height: 180,
@@ -468,27 +653,52 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                       return Container(
                         width: 140,
                         margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: Column(
                           children: [
                             Expanded(
                               child: Stack(
                                 children: [
                                   ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), 
-                                    child: ImageHelper.displayImage(p.images.isNotEmpty ? p.images.first : '', fit: BoxFit.cover, width: double.infinity)
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(12),
+                                    ),
+                                    child: ImageHelper.displayImage(
+                                      p.images.isNotEmpty ? p.images.first : '',
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    ),
                                   ),
                                   Positioned(
                                     top: 4,
                                     left: 4,
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.star, size: 10, color: Colors.amber),
+                                          const Icon(
+                                            Icons.star,
+                                            size: 10,
+                                            color: Colors.amber,
+                                          ),
                                           const SizedBox(width: 2),
-                                          Text(p.averageRating.toStringAsFixed(1), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                          Text(
+                                            p.averageRating.toStringAsFixed(1),
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -499,20 +709,39 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                                     child: Row(
                                       children: [
                                         GestureDetector(
-                                          onTap: () => _editProduct(product: p, index: index),
+                                          onTap: () => _editProduct(
+                                            product: p,
+                                            index: index,
+                                          ),
                                           child: Container(
                                             padding: const EdgeInsets.all(4),
-                                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                            child: const Icon(Icons.edit, size: 14, color: Color(0xFF904CC1)),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.edit,
+                                              size: 14,
+                                              color: Color(0xFF904CC1),
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 4),
                                         GestureDetector(
-                                          onTap: () => setState(() => _products.removeAt(index)),
+                                          onTap: () => setState(
+                                            () => _products.removeAt(index),
+                                          ),
                                           child: Container(
                                             padding: const EdgeInsets.all(4),
-                                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                            child: const Icon(Icons.delete, size: 14, color: Colors.red),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.delete,
+                                              size: 14,
+                                              color: Colors.red,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -523,11 +752,25 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                             ),
                             Padding(
                               padding: const EdgeInsets.all(4.0),
-                              child: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              child: Text(
+                                p.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                             Text(
-                              p.priceType == 'per_person' ? '₹${p.price}/person' : '₹${p.price}',
-                              style: const TextStyle(color: Color(0xFF904CC1), fontSize: 11, fontWeight: FontWeight.bold)
+                              p.priceType == 'per_person'
+                                  ? '₹${p.price}/person'
+                                  : '₹${p.price}',
+                              style: const TextStyle(
+                                color: Color(0xFF904CC1),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 4),
                           ],
@@ -536,19 +779,28 @@ class _EditBusinessViewState extends State<EditBusinessView> {
                     },
                   ),
                 ),
-              
+
               const SizedBox(height: 40),
-              _isUploading 
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
-                    onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF904CC1),
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              _isUploading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      onPressed: _save,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF904CC1),
+                        minimumSize: const Size(double.infinity, 56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Update Profile',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    child: const Text('Update Profile', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
               const SizedBox(height: 40),
             ],
           ),
@@ -559,19 +811,36 @@ class _EditBusinessViewState extends State<EditBusinessView> {
 
   Widget _buildCard(List<Widget> children) => Container(
     padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+      ],
+    ),
     child: Column(children: children),
   );
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType keyboardType = TextInputType.text}) => TextFormField(
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    TextInputType keyboardType = TextInputType.text,
+  }) => TextFormField(
     controller: controller,
     keyboardType: keyboardType,
     decoration: _inputDecoration(label, icon),
   );
 
-  InputDecoration _inputDecoration(String label, IconData icon) => InputDecoration(
-    labelText: label, prefixIcon: Icon(icon, color: Colors.grey),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-    filled: true, fillColor: const Color(0xFFF1F4F8),
-  );
+  InputDecoration _inputDecoration(String label, IconData icon) =>
+      InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.grey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF1F4F8),
+      );
 }

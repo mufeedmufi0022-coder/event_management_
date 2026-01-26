@@ -23,12 +23,7 @@ class VendorListView extends StatelessWidget {
         : userProvider.approvedVendors.where((v) {
             final searchCategory = category!.toLowerCase();
 
-            // 1. Check if vendor service type matches
-            bool serviceMatch = v.serviceType.toLowerCase().contains(
-              searchCategory,
-            );
-
-            // 2. Check if any product matches
+            // 1. Check if any product matches
             bool productMatch = v.products.any(
               (p) =>
                   // Check product name
@@ -41,8 +36,7 @@ class VendorListView extends StatelessWidget {
                       (p.categoryType?.toLowerCase().contains('car') ?? false)),
             );
 
-            return serviceMatch ||
-                productMatch ||
+            return productMatch ||
                 category == 'Others' ||
                 category == 'മറ്റുള്ളവ';
           }).toList();

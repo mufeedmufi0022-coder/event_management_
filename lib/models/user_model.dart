@@ -10,7 +10,6 @@ class UserModel {
 
   // Vendor specific fields (Optional)
   final String? businessName;
-  final String? serviceType;
   final String? location;
   final String? priceRange;
   final String? description;
@@ -30,7 +29,6 @@ class UserModel {
     required this.status,
     this.isActive = true,
     this.businessName,
-    this.serviceType,
     this.location,
     this.priceRange,
     this.description,
@@ -54,7 +52,6 @@ class UserModel {
       status: data['status']?.toString().toLowerCase().trim() ?? 'pending',
       isActive: data['isActive'] ?? true,
       businessName: data['businessName']?.toString(),
-      serviceType: data['serviceType']?.toString(),
       location: data['location']?.toString(),
       priceRange: data['priceRange']?.toString(),
       description: data['description']?.toString(),
@@ -85,7 +82,6 @@ class UserModel {
       'status': status,
       'isActive': isActive,
       'businessName': businessName,
-      'serviceType': serviceType,
       'location': location,
       'priceRange': priceRange,
       'description': description,
@@ -107,7 +103,6 @@ class UserModel {
     String? status,
     bool? isActive,
     String? businessName,
-    String? serviceType,
     String? location,
     String? priceRange,
     String? description,
@@ -127,7 +122,6 @@ class UserModel {
       status: status ?? this.status,
       isActive: isActive ?? this.isActive,
       businessName: businessName ?? this.businessName,
-      serviceType: serviceType ?? this.serviceType,
       location: location ?? this.location,
       priceRange: priceRange ?? this.priceRange,
       description: description ?? this.description,

@@ -13,7 +13,10 @@ class VendorDetailAdminView extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F8),
       appBar: AppBar(
-        title: const Text('Vendor Details', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Vendor Details',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -29,19 +32,28 @@ class VendorDetailAdminView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 40,
                     backgroundColor: const Color(0xFF904CC1).withOpacity(0.1),
-                    backgroundImage: vendorUser.images.isNotEmpty 
-                      ? ImageHelper.getImageProvider(vendorUser.images.first) 
-                      : null,
-                    child: vendorUser.images.isEmpty 
-                      ? const Icon(Icons.store, size: 40, color: Color(0xFF904CC1)) 
-                      : null,
+                    backgroundImage: vendorUser.images.isNotEmpty
+                        ? ImageHelper.getImageProvider(vendorUser.images.first)
+                        : null,
+                    child: vendorUser.images.isEmpty
+                        ? const Icon(
+                            Icons.store,
+                            size: 40,
+                            color: Color(0xFF904CC1),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 20),
                   Expanded(
@@ -50,11 +62,28 @@ class VendorDetailAdminView extends StatelessWidget {
                       children: [
                         Text(
                           vendorUser.businessName ?? vendorUser.name,
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Text(
-                          vendorUser.serviceType ?? 'No Service Type',
-                          style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.w600),
+                          vendorUser.products
+                                  .map((p) => p.categoryType)
+                                  .where((c) => c != null && c.isNotEmpty)
+                                  .toSet()
+                                  .join(', ')
+                                  .isEmpty
+                              ? 'No Service Type'
+                              : vendorUser.products
+                                    .map((p) => p.categoryType)
+                                    .where((c) => c != null && c.isNotEmpty)
+                                    .toSet()
+                                    .join(', '),
+                          style: const TextStyle(
+                            color: Color(0xFF904CC1),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         _buildStatusChip(vendorUser.status),
@@ -67,27 +96,56 @@ class VendorDetailAdminView extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Contact Information
-            const Text('Contact & Location', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Contact & Location',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             _buildDetailCard([
-              _buildDetailItem(Icons.email_outlined, 'Email Address', vendorUser.email),
-              _buildDetailItem(Icons.phone_outlined, 'Contact Number', vendorUser.contactNumber ?? 'Not provided'),
-              _buildDetailItem(Icons.location_on_outlined, 'Service Location', vendorUser.location ?? 'Not provided'),
+              _buildDetailItem(
+                Icons.email_outlined,
+                'Email Address',
+                vendorUser.email,
+              ),
+              _buildDetailItem(
+                Icons.phone_outlined,
+                'Contact Number',
+                vendorUser.contactNumber ?? 'Not provided',
+              ),
+              _buildDetailItem(
+                Icons.location_on_outlined,
+                'Service Location',
+                vendorUser.location ?? 'Not provided',
+              ),
             ]),
             const SizedBox(height: 32),
 
             // Business Details
-            const Text('Business Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Business Overview',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             _buildDetailCard([
-              _buildDetailItem(Icons.payments_outlined, 'Price Range', vendorUser.priceRange ?? 'Not provided'),
-              _buildDetailItem(Icons.description_outlined, 'Description', vendorUser.description ?? 'No description provided'),
+              _buildDetailItem(
+                Icons.payments_outlined,
+                'Price Range',
+                vendorUser.priceRange ?? 'Not provided',
+              ),
+              _buildDetailItem(
+                Icons.description_outlined,
+                'Description',
+                vendorUser.description ?? 'No description provided',
+              ),
             ]),
             const SizedBox(height: 32),
 
             // Gallery (If any images exist)
             if (vendorUser.images.isNotEmpty) ...[
-              const Text('Gallery', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Gallery',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 16),
               SizedBox(
                 height: 120,
@@ -104,7 +162,10 @@ class VendorDetailAdminView extends StatelessWidget {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: ImageHelper.displayImage(vendorUser.images[index], fit: BoxFit.cover),
+                        child: ImageHelper.displayImage(
+                          vendorUser.images[index],
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     );
                   },
@@ -115,7 +176,10 @@ class VendorDetailAdminView extends StatelessWidget {
 
             // Products Section
             if (vendorUser.products.isNotEmpty) ...[
-              const Text('Products & Services', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Products & Services',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 16),
               ListView.builder(
                 shrinkWrap: true,
@@ -134,15 +198,32 @@ class VendorDetailAdminView extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: ImageHelper.displayImage(product.imageUrl, width: 60, height: 60, fit: BoxFit.cover),
+                          child: ImageHelper.displayImage(
+                            product.imageUrl,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Text('₹${product.price}', style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(
+                                product.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '₹${product.price}',
+                                style: const TextStyle(
+                                  color: Color(0xFF904CC1),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -169,7 +250,9 @@ class VendorDetailAdminView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,8 +273,17 @@ class VendorDetailAdminView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
               ],
             ),
           ),
@@ -203,9 +295,14 @@ class VendorDetailAdminView extends StatelessWidget {
   Widget _buildStatusChip(String status) {
     Color color;
     switch (status) {
-      case 'approved': color = Colors.green; break;
-      case 'blocked': color = Colors.red; break;
-      default: color = Colors.orange;
+      case 'approved':
+        color = Colors.green;
+        break;
+      case 'blocked':
+        color = Colors.red;
+        break;
+      default:
+        color = Colors.orange;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -215,7 +312,11 @@ class VendorDetailAdminView extends StatelessWidget {
       ),
       child: Text(
         status.toUpperCase(),
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

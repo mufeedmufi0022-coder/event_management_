@@ -9,25 +9,33 @@ class ImageHelper {
   static final _picker = ImagePicker();
   static final _storageService = StorageService();
 
-  static Future<String?> pickAndUploadImage({ImageSource source = ImageSource.gallery}) async {
+  static Future<String?> pickAndUploadImage({
+    ImageSource source = ImageSource.gallery,
+  }) async {
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
-        imageQuality: 25,
-        maxWidth: 500,
-        maxHeight: 500,
+        imageQuality: 10, // Higher compression to reduce string size
+        maxWidth: 300,
+        maxHeight: 300,
       );
       if (image == null) return null;
 
       final file = File(image.path);
-      // Using Base64 encoding via StorageService to avoid Firebase Storage configuration issues (404s)
+      // Using Base64 encoding as requested by user
       return await _storageService.uploadImage('profiles', file);
     } catch (e) {
       print('Error picking/uploading image: $e');
       return null;
     }
   }
-  static Widget displayImage(String? imageSource, {BoxFit fit = BoxFit.cover, double? width, double? height}) {
+
+  static Widget displayImage(
+    String? imageSource, {
+    BoxFit fit = BoxFit.cover,
+    double? width,
+    double? height,
+  }) {
     if (imageSource == null || imageSource.isEmpty) {
       return Container(
         color: Colors.grey[200],
@@ -41,12 +49,7 @@ class ImageHelper {
       try {
         final base64String = imageSource.split(',').last;
         final Uint8List bytes = base64Decode(base64String);
-        return Image.memory(
-          bytes,
-          fit: fit,
-          width: width,
-          height: height,
-        );
+        return Image.memory(bytes, fit: fit, width: width, height: height);
       } catch (e) {
         print('Error decoding base64 image: $e');
         return const Icon(Icons.broken_image);
@@ -57,7 +60,8 @@ class ImageHelper {
         fit: fit,
         width: width,
         height: height,
-        errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+        errorBuilder: (context, error, stackTrace) =>
+            const Icon(Icons.broken_image),
       );
     }
   }

@@ -56,7 +56,9 @@ class UserService {
               .map((doc) {
                 try {
                   final vendor = VendorModel.fromMap(doc.data(), doc.id);
-                  print('  - ${vendor.businessName} (${vendor.serviceType})');
+                  print(
+                    '  - ${vendor.businessName} (${vendor.products.length} products)',
+                  );
                   return vendor;
                 } catch (e) {
                   print('ERROR parsing vendor ${doc.id}: $e');

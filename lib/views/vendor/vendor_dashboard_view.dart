@@ -56,7 +56,7 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
   @override
   Widget build(BuildContext context) {
     final vendorProvider = context.watch<VendorProvider>();
-    
+
     if (vendorProvider.vendorModel == null && !vendorProvider.isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Setup Business')),
@@ -68,15 +68,22 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
               children: [
                 const Icon(Icons.business, size: 80, color: Colors.blue),
                 const SizedBox(height: 16),
-                const Text('Set up your business profile to start receiving bookings!',
-                    textAlign: TextAlign.center, style: TextStyle(fontSize: 18)),
+                const Text(
+                  'Set up your business profile to start receiving bookings!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18),
+                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const EditBusinessView()),
+                    MaterialPageRoute(
+                      builder: (context) => const EditBusinessView(),
+                    ),
                   ),
-                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
                   child: const Text('Complete Profile'),
                 ),
               ],
@@ -113,9 +120,18 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
           unselectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Requests'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Availability'),
-            BottomNavigationBarItem(icon: Icon(Icons.chat_outlined), label: 'Chats'),
-            BottomNavigationBarItem(icon: Icon(Icons.business), label: 'Profile'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today),
+              label: 'Availability',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_outlined),
+              label: 'Chats',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.business),
+              label: 'Profile',
+            ),
           ],
         ),
       ),
@@ -136,7 +152,7 @@ class _VendorDashboardViewState extends State<VendorDashboardView> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red, 
+              backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               minimumSize: const Size(0, 40),
             ),
@@ -159,7 +175,10 @@ class BookingRequestsTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4F8),
       appBar: AppBar(
-        title: const Text('Booking Requests', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Booking Requests',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -177,7 +196,11 @@ class BookingRequestsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildBookingItem(BuildContext context, BookingModel booking, VendorProvider provider) {
+  Widget _buildBookingItem(
+    BuildContext context,
+    BookingModel booking,
+    VendorProvider provider,
+  ) {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
@@ -190,23 +213,35 @@ class BookingRequestsTab extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Booking ID: #${booking.bookingId.length > 5 ? booking.bookingId.substring(0, 5) : booking.bookingId}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(
+                  'Booking ID: #${booking.bookingId.length > 5 ? booking.bookingId.substring(0, 5) : booking.bookingId}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
                 _buildStatusBadge(booking.status),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                if (booking.productImage != null && booking.productImage!.isNotEmpty)
+                if (booking.productImage != null &&
+                    booking.productImage!.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: ImageHelper.displayImage(booking.productImage, width: 70, height: 70, fit: BoxFit.cover),
+                    child: ImageHelper.displayImage(
+                      booking.productImage,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                    ),
                   )
                 else
                   Container(
                     width: 70,
                     height: 70,
-                    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: const Icon(Icons.image, color: Colors.grey),
                   ),
                 const SizedBox(width: 16),
@@ -216,29 +251,46 @@ class BookingRequestsTab extends StatelessWidget {
                     children: [
                       Text(
                         booking.productName ?? 'Service Ordered',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today, size: 12, color: Color(0xFF904CC1)),
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 12,
+                            color: Color(0xFF904CC1),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Icon(Icons.celebration, size: 12, color: Colors.orange),
+                          const Icon(
+                            Icons.celebration,
+                            size: 12,
+                            color: Colors.orange,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             booking.occasion ?? 'General',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -249,39 +301,70 @@ class BookingRequestsTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (booking.status == 'requested') ...[
-              const Text('Action Required', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Action Required',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => provider.updateBookingStatus(booking.bookingId, 'cancelled'),
-                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                      onPressed: () => provider.updateBookingStatus(
+                        booking.bookingId,
+                        'cancelled',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
                       child: const Text('Reject'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => _showQuoteDialog(context, booking.bookingId, provider),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF904CC1), foregroundColor: Colors.white),
+                      onPressed: () => _showQuoteDialog(
+                        context,
+                        booking.bookingId,
+                        provider,
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF904CC1),
+                        foregroundColor: Colors.white,
+                      ),
                       child: const Text('Send Quote'),
                     ),
                   ),
                 ],
               ),
             ] else ...[
-              Text('Details: ${booking.status.toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.w500)),
+              Text(
+                'Details: ${booking.status.toUpperCase()}',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
               if (booking.quotePrice != null) ...[
                 const SizedBox(height: 4),
-                Text('Quoted Price: ₹${booking.quotePrice}', style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.bold)),
+                Text(
+                  'Quoted Price: ₹${booking.quotePrice}',
+                  style: const TextStyle(
+                    color: Color(0xFF904CC1),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
-              if (booking.status == 'accepted') 
+              if (booking.status == 'accepted')
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: ElevatedButton(
-                    onPressed: () => provider.updateBookingStatus(booking.bookingId, 'completed'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 36)),
+                    onPressed: () => provider.updateBookingStatus(
+                      booking.bookingId,
+                      'completed',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 36),
+                    ),
                     child: const Text('Mark as Completed'),
                   ),
                 ),
@@ -292,7 +375,11 @@ class BookingRequestsTab extends StatelessWidget {
     );
   }
 
-  void _showQuoteDialog(BuildContext context, String bookingId, VendorProvider provider) {
+  void _showQuoteDialog(
+    BuildContext context,
+    String bookingId,
+    VendorProvider provider,
+  ) {
     final priceController = TextEditingController();
     final noteController = TextEditingController();
 
@@ -305,23 +392,36 @@ class BookingRequestsTab extends StatelessWidget {
           children: [
             TextField(
               controller: priceController,
-              decoration: const InputDecoration(labelText: 'Total Price (₹)', hintText: 'e.g. 5000'),
+              decoration: const InputDecoration(
+                labelText: 'Total Price (₹)',
+                hintText: 'e.g. 5000',
+              ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: noteController,
-              decoration: const InputDecoration(labelText: 'Optional Note', hintText: 'Delivery included...'),
+              decoration: const InputDecoration(
+                labelText: 'Optional Note',
+                hintText: 'Delivery included...',
+              ),
               maxLines: 2,
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (priceController.text.isNotEmpty) {
-                provider.sendQuotation(bookingId, priceController.text.trim(), noteController.text.trim());
+                provider.sendQuotation(
+                  bookingId,
+                  priceController.text.trim(),
+                  noteController.text.trim(),
+                );
                 Navigator.pop(context);
               }
             },
@@ -336,12 +436,23 @@ class BookingRequestsTab extends StatelessWidget {
   Widget _buildStatusBadge(String status) {
     Color color;
     switch (status) {
-      case 'requested': color = Colors.orange; break;
-      case 'quoted': color = Colors.blue; break;
-      case 'accepted': color = Colors.green; break;
-      case 'completed': color = Colors.teal; break;
-      case 'cancelled': color = Colors.red; break;
-      default: color = Colors.grey;
+      case 'requested':
+        color = Colors.orange;
+        break;
+      case 'quoted':
+        color = Colors.blue;
+        break;
+      case 'accepted':
+        color = Colors.green;
+        break;
+      case 'completed':
+        color = Colors.teal;
+        break;
+      case 'cancelled':
+        color = Colors.red;
+        break;
+      default:
+        color = Colors.grey;
     }
 
     return Container(
@@ -351,7 +462,14 @@ class BookingRequestsTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.5)),
       ),
-      child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }
@@ -372,7 +490,9 @@ class VendorProfileTab extends StatelessWidget {
               if (vendor != null) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => VendorDetailsView(vendor: vendor)),
+                  MaterialPageRoute(
+                    builder: (context) => VendorDetailsView(vendor: vendor),
+                  ),
                 );
               }
             },
@@ -403,37 +523,67 @@ class VendorProfileTab extends StatelessWidget {
         child: Column(
           children: [
             CircleAvatar(
-              radius: 50, 
+              radius: 50,
               backgroundColor: Colors.white,
-              backgroundImage: vendor?.logoUrl != null && vendor!.logoUrl.isNotEmpty 
-                ? ImageHelper.getImageProvider(vendor.logoUrl) 
-                : null,
-              child: (vendor?.logoUrl == null || vendor!.logoUrl.isEmpty) 
-                ? const Icon(Icons.store, size: 50, color: Color(0xFF904CC1)) 
-                : null,
+              backgroundImage:
+                  vendor?.logoUrl != null && vendor!.logoUrl.isNotEmpty
+                  ? ImageHelper.getImageProvider(vendor.logoUrl)
+                  : null,
+              child: (vendor?.logoUrl == null || vendor!.logoUrl.isEmpty)
+                  ? const Icon(Icons.store, size: 50, color: Color(0xFF904CC1))
+                  : null,
             ),
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const EditBusinessView()),
+                MaterialPageRoute(
+                  builder: (context) => const EditBusinessView(),
+                ),
               ),
               icon: const Icon(Icons.edit, size: 16),
               label: const Text('Edit Identity'),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF904CC1)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF904CC1),
+              ),
             ),
             const SizedBox(height: 16),
-            Text(vendor?.businessName ?? 'No Name',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            Text(vendor?.serviceType ?? 'No Type', style: const TextStyle(color: Color(0xFF904CC1), fontWeight: FontWeight.bold)),
+            Text(
+              vendor?.businessName ?? 'No Name',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              vendor?.products
+                      .map((p) => p.categoryType)
+                      .where((c) => c != null && c.isNotEmpty)
+                      .toSet()
+                      .join(', ') ??
+                  'No Type',
+              style: const TextStyle(
+                color: Color(0xFF904CC1),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const Divider(height: 32),
-            _buildInfoRow(Icons.location_on_outlined, vendor?.location ?? 'No location'),
-            _buildInfoRow(Icons.phone_outlined, vendor?.contactNumber ?? 'No contact number'),
-            _buildInfoRow(Icons.payments_outlined, vendor?.priceRange ?? 'No price range'),
+            _buildInfoRow(
+              Icons.location_on_outlined,
+              vendor?.location ?? 'No location',
+            ),
+            _buildInfoRow(
+              Icons.phone_outlined,
+              vendor?.contactNumber ?? 'No contact number',
+            ),
+            _buildInfoRow(
+              Icons.payments_outlined,
+              vendor?.priceRange ?? 'No price range',
+            ),
             const SizedBox(height: 16),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text('About Business', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                'About Business',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 8),
             Align(
@@ -458,24 +608,47 @@ class VendorProfileTab extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Need Assistance?', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text('Chat with system admin for support', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text(
+                          'Need Assistance?',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Chat with system admin for support',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      final user = Provider.of<AuthProvider>(context, listen: false).userModel;
+                      final user = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      ).userModel;
                       if (user != null) {
-                        final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-                        String chatId = await chatProvider.startChat(user.uid, 'admin@event.com');
+                        final chatProvider = Provider.of<ChatProvider>(
+                          context,
+                          listen: false,
+                        );
+                        String chatId = await chatProvider.startChat(
+                          user.uid,
+                          'admin@event.com',
+                        );
                         if (context.mounted) {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => ChatView(chatId: chatId, title: 'Admin Support')));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatView(
+                                chatId: chatId,
+                                title: 'Admin Support',
+                              ),
+                            ),
+                          );
                         }
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue, 
+                      backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(0, 40),
                     ),
@@ -487,11 +660,17 @@ class VendorProfileTab extends StatelessWidget {
             const SizedBox(height: 24),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text('My Products & Services', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                'My Products & Services',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 16),
             if (vendor?.products == null || vendor!.products.isEmpty)
-              const Text('No products added yet', style: TextStyle(color: Colors.grey))
+              const Text(
+                'No products added yet',
+                style: TextStyle(color: Colors.grey),
+              )
             else
               GridView.builder(
                 shrinkWrap: true,
@@ -507,14 +686,17 @@ class VendorProfileTab extends StatelessWidget {
                   final p = vendor.products[index];
                   return Container(
                     decoration: BoxDecoration(
-                      color: Colors.white, 
-                      borderRadius: BorderRadius.circular(12), 
-                      border: Border.all(color: Colors.grey[200]!)
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!),
                     ),
                     child: InkWell(
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => VendorDetailsView(vendor: vendor)),
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              VendorDetailsView(vendor: vendor),
+                        ),
                       ),
                       child: Stack(
                         children: [
@@ -522,16 +704,36 @@ class VendorProfileTab extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)), 
-                                  child: ImageHelper.displayImage(p.imageUrl, fit: BoxFit.cover, width: double.infinity)
-                                )
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(12),
+                                  ),
+                                  child: ImageHelper.displayImage(
+                                    p.imageUrl,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                  ),
+                                ),
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(8),
                                 child: Column(
                                   children: [
-                                    Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), maxLines: 1),
-                                    Text('₹${p.price}', style: const TextStyle(color: Color(0xFF904CC1), fontSize: 13, fontWeight: FontWeight.bold)),
+                                    Text(
+                                      p.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                      maxLines: 1,
+                                    ),
+                                    Text(
+                                      '₹${p.price}',
+                                      style: const TextStyle(
+                                        color: Color(0xFF904CC1),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -544,10 +746,17 @@ class VendorProfileTab extends StatelessWidget {
                               radius: 14,
                               backgroundColor: Colors.white.withOpacity(0.9),
                               child: IconButton(
-                                icon: const Icon(Icons.edit, size: 14, color: Color(0xFF904CC1)),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  size: 14,
+                                  color: Color(0xFF904CC1),
+                                ),
                                 onPressed: () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const EditBusinessView()),
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const EditBusinessView(),
+                                  ),
                                 ),
                               ),
                             ),
@@ -592,7 +801,7 @@ class VendorProfileTab extends StatelessWidget {
               Provider.of<AuthProvider>(context, listen: false).logout();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red, 
+              backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               minimumSize: const Size(0, 40),
             ),
@@ -610,7 +819,9 @@ class VendorProfileTab extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.blue),
           const SizedBox(width: 16),
-          Expanded(child: Text(text, maxLines: 2, overflow: TextOverflow.ellipsis)),
+          Expanded(
+            child: Text(text, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ),
         ],
       ),
     );
