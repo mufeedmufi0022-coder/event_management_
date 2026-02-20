@@ -61,17 +61,34 @@ class LocationHelper {
       );
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        // Create a concise address: "Locality, City"
-        String locality = place.locality ?? '';
-        String subLocality = place.subLocality ?? '';
 
-        if (subLocality.isNotEmpty && locality.isNotEmpty) {
-          return "$subLocality, $locality";
-        } else if (locality.isNotEmpty) {
-          return locality;
-        } else {
-          return place.name ?? "Unknown Location";
+        // Print all fields for debugging if needed
+        print("Placemark: ${place.toJson()}");
+
+        List<String> addressParts = [];
+
+        // Try to get the most specific parts first
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+          addressParts.add(place.subLocality!);
+        } else if (place.thoroughfare != null &&
+            place.thoroughfare!.isNotEmpty) {
+          addressParts.add(place.thoroughfare!);
         }
+
+        if (place.locality != null && place.locality!.isNotEmpty) {
+          addressParts.add(place.locality!);
+        }
+
+        if (addressParts.isEmpty) {
+          if (place.administrativeArea != null &&
+              place.administrativeArea!.isNotEmpty) {
+            addressParts.add(place.administrativeArea!);
+          } else {
+            return place.name ?? "Unknown Location";
+          }
+        }
+
+        return addressParts.join(", ");
       }
     } catch (e) {
       print("Error getting address: $e");

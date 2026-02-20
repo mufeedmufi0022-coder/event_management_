@@ -232,10 +232,10 @@ class AuthProvider extends ChangeNotifier {
           position.longitude,
         );
 
-        // Use coordinates if address derivation fails
+        // Use coordinates if address derivation fails, but make it look like a placeholder
         final finalAddress =
             address ??
-            "Lat: ${position.latitude.toStringAsFixed(2)}, Long: ${position.longitude.toStringAsFixed(2)}";
+            "Location (${position.latitude.toStringAsFixed(2)}, ${position.longitude.toStringAsFixed(2)})";
 
         await _authService.updateProfile(_userModel!.uid, {
           'currentAddress': finalAddress,
