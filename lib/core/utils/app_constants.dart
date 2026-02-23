@@ -10,18 +10,20 @@ class AppConstants {
         {'name': 'Decoration', 'icon': Icons.auto_awesome},
         {'name': 'Food', 'icon': Icons.restaurant},
         {'name': 'Catering', 'icon': Icons.room_service},
+        {'name': 'Photography', 'icon': Icons.camera_alt},
+        {'name': 'Vehicle', 'icon': Icons.directions_car},
+        {'name': 'Music/DJ', 'icon': Icons.music_note},
         {'name': 'Rental Wears', 'icon': Icons.shopping_bag},
-        {'name': 'Luxury Cars', 'icon': Icons.directions_car},
-        {'name': 'Photographer', 'icon': Icons.camera_alt},
       ],
     },
     'Birthday': {
       'headerImage': 'assets/images/birthday_thumb.png',
       'services': [
-        {'name': 'Restaurant', 'icon': Icons.restaurant_menu},
-        {'name': 'Decoration', 'icon': Icons.celebration},
-        {'name': 'Food', 'icon': Icons.fastfood},
         {'name': 'Catering', 'icon': Icons.room_service},
+        {'name': 'Decoration', 'icon': Icons.celebration},
+        {'name': 'Photography', 'icon': Icons.camera_alt},
+        {'name': 'Music/DJ', 'icon': Icons.music_note},
+        {'name': 'Restaurant', 'icon': Icons.restaurant_menu},
       ],
     },
     'Inauguration': {
@@ -30,8 +32,8 @@ class AppConstants {
         {'name': 'Decoration', 'icon': Icons.auto_awesome},
         {'name': 'Food', 'icon': Icons.restaurant},
         {'name': 'Catering', 'icon': Icons.room_service},
-        {'name': 'Luxury Cars', 'icon': Icons.directions_car},
-        {'name': 'Photographer', 'icon': Icons.camera_alt},
+        {'name': 'Photography', 'icon': Icons.camera_alt},
+        {'name': 'Vehicle', 'icon': Icons.directions_car},
       ],
     },
     'Party': {
@@ -41,10 +43,23 @@ class AppConstants {
         {'name': 'Food', 'icon': Icons.restaurant},
         {'name': 'Convention Center', 'icon': Icons.business},
         {'name': 'Catering', 'icon': Icons.room_service},
-        {'name': 'Luxury Cars', 'icon': Icons.directions_car},
+        {'name': 'Music/DJ', 'icon': Icons.music_note},
+        {'name': 'Vehicle', 'icon': Icons.directions_car},
       ],
     },
   };
+
+  static const List<String> serviceCategories = [
+    'Photography',
+    'Food',
+    'Catering',
+    'Vehicle',
+    'Convention Center',
+    'Music/DJ',
+    'Decoration',
+    'Restaurant',
+    'Other',
+  ];
 
   // Shared keywords for image mapping (used in CategoryDetailView logic)
   static String getServiceImage(String type) {

@@ -9,17 +9,13 @@ import 'providers/chat_provider.dart';
 import 'providers/locale_provider.dart';
 import 'views/root_wrapper.dart';
 import 'views/splash_screen.dart';
-import 'services/auth_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Note: Firebase initialization will be added once configuration is provided.
-  // Initialize default admin credentials in Firestore
-  await AuthService().initializeAdmin();
 
   runApp(
     MultiProvider(

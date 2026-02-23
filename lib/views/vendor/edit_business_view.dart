@@ -9,6 +9,7 @@ import '../../providers/vendor_provider.dart';
 import '../../models/vendor_model.dart';
 import '../../services/storage_service.dart';
 import '../../core/utils/image_helper.dart';
+import '../../core/utils/app_constants.dart';
 
 class EditBusinessView extends StatefulWidget {
   const EditBusinessView({super.key});
@@ -33,16 +34,7 @@ class _EditBusinessViewState extends State<EditBusinessView> {
   LatLng _selectedLatLng = const LatLng(10.8505, 76.2711);
   bool _isUploading = false;
 
-  final List<String> _serviceTypes = [
-    'Convention Center',
-    'Food',
-    'Decoration',
-    'Vehicle',
-    'Catering',
-    'Photography',
-    'Music/DJ',
-    'Restaurant',
-  ];
+  final List<String> _serviceTypes = AppConstants.serviceCategories;
 
   @override
   void initState() {

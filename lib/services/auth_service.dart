@@ -153,32 +153,4 @@ class AuthService {
   Future<void> signOut() async {
     await _auth.signOut();
   }
-
-  // Initialize admin credentials in users collection if they don't exist
-  Future<void> initializeAdmin() async {
-    try {
-      final String adminEmail = 'admin@event.com';
-      final String adminPassword = 'admin@123';
-
-      QuerySnapshot adminCheck = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: adminEmail)
-          .where('role', isEqualTo: 'admin')
-          .get();
-
-      if (adminCheck.docs.isEmpty) {
-        print('Initializing default admin in users collection...');
-        await _firestore.collection('users').doc(adminEmail).set({
-          'email': adminEmail,
-          'password': adminPassword,
-          'name': 'System Admin',
-          'role': 'admin',
-          'status': 'approved',
-        });
-        print('Admin initialization complete.');
-      }
-    } catch (e) {
-      print('Error initializing admin: $e');
-    }
-  }
 }

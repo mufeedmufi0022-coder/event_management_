@@ -43,33 +43,57 @@ class UserService {
 
   // Get all approved vendors (only active ones)
   Stream<List<VendorModel>> getApprovedVendors() {
-    print('=== FETCHING APPROVED VENDORS ===');
-    return _firestore
-        .collection('users')
-        .where('role', isEqualTo: 'vendor')
-        .where('status', isEqualTo: 'approved')
-        .where('isActive', isEqualTo: true)
-        .snapshots()
-        .map((snapshot) {
-          print('Firestore query returned ${snapshot.docs.length} vendors');
-          final vendors = snapshot.docs
-              .map((doc) {
-                try {
-                  final vendor = VendorModel.fromMap(doc.data(), doc.id);
-                  print(
-                    '  - ${vendor.businessName} (${vendor.products.length} products)',
-                  );
-                  return vendor;
-                } catch (e) {
-                  print('ERROR parsing vendor ${doc.id}: $e');
-                  return null;
-                }
-              })
-              .whereType<VendorModel>()
-              .toList();
-          print('Successfully parsed ${vendors.length} vendors');
-          return vendors;
-        });
+    print('=== [DEBUG] FETCHING APPROVED VENDORS ===');
+    return _firestore.collection('users').snapshots().map((snapshot) {
+      final vendors = snapshot.docs
+          .map((doc) {
+            try {
+              final data = doc.data();
+              // Robust extraction
+              final role = (data['role'] ?? '').toString().toLowerCase().trim();
+              final status = (data['status'] ?? '')
+                  .toString()
+                  .toLowerCase()
+                  .trim();
+              final isActive =
+                  (data['isActive'] ?? true).toString().toLowerCase() !=
+                  'false';
+
+              if (role != 'vendor') return null;
+
+              // Security: Users only see approved and active vendors
+              // Note: During testing, ensure you use Admin Dashboard to approve vendors
+              if (status != 'approved' && status != 'active') {
+                print(
+                  'Skipping vendor ${doc.id} ("${data['businessName'] ?? data['name']}"): status="$status" is not "approved"',
+                );
+                return null;
+              }
+
+              if (!isActive) {
+                print(
+                  'Skipping vendor ${doc.id} ("${data['businessName'] ?? data['name']}"): isActive is false',
+                );
+                return null;
+              }
+
+              final vendor = VendorModel.fromMap(data, doc.id);
+              print(
+                '✓ VALID VENDOR LOADED: ${vendor.businessName} (${vendor.products.length} products)',
+              );
+              return vendor;
+            } catch (e) {
+              print('ERROR parsing vendor document ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<VendorModel>()
+          .toList();
+      print(
+        '=== [DEBUG] TOTAL APPROVED VENDORS FOR USER: ${vendors.length} ===',
+      );
+      return vendors;
+    });
   }
 
   // Send booking request

@@ -16,93 +16,73 @@ class VendorListView extends StatelessWidget {
     final userProvider = context.watch<UserProvider>();
     final lp = context.watch<LocaleProvider>();
 
-    // Filter vendors if category is provided
-    // Filter vendors if category is provided
-    final matchedVendors = category == null
-        ? userProvider.approvedVendors
-        : userProvider.approvedVendors.where((v) {
-            final searchCategory = category!.toLowerCase();
+    // Unified matching logic for products
+    bool isProductMatch(ProductModel p, String searchCat) {
+      final s = searchCat.toLowerCase();
+      final pName = p.name.toLowerCase();
+      final pCat = (p.categoryType ?? '').toLowerCase();
+      final pSub = (p.subType ?? '').toLowerCase();
 
-            // 1. Check if any product matches
-            bool productMatch = v.products.any(
-              (p) =>
-                  // Check product name
-                  p.name.toLowerCase().contains(searchCategory) ||
-                  // Check category type (like 'car', 'catering')
-                  (p.categoryType != null &&
-                      p.categoryType!.toLowerCase().contains(searchCategory)) ||
-                  // Check if searching for 'Luxury Cars', look for 'car' type
-                  (searchCategory.contains('car') &&
-                      (p.categoryType?.toLowerCase().contains('car') ?? false)),
-            );
+      // 1. Direct contains check
+      if (pName.contains(s) || pCat.contains(s) || pSub.contains(s))
+        return true;
 
-            return productMatch ||
-                category == 'Others' ||
-                category == 'മറ്റുള്ളവ';
-          }).toList();
+      // 2. Synonyms mapping
+      // Vehicles
+      if ((s.contains('car') || s.contains('vehicle')) &&
+          (pCat.contains('vehicle') || pCat.contains('car')))
+        return true;
 
-    // Flatten to products
-    // Flatten to products
+      // Convention Center
+      if ((s.contains('convention') ||
+              s.contains('hall') ||
+              s.contains('center')) &&
+          (pCat.contains('convention') ||
+              pCat.contains('hall') ||
+              pCat.contains('center')))
+        return true;
+
+      // Music/DJ
+      if ((s.contains('music') || s.contains('dj')) &&
+          (pCat.contains('music') || pCat.contains('dj')))
+        return true;
+
+      // Photography
+      if ((s.contains('photo') || s.contains('graphy') || s.contains('cam')) &&
+          (pCat.contains('photo') ||
+              pCat.contains('graphy') ||
+              pCat.contains('cam')))
+        return true;
+
+      // Catering / Food / Restaurant
+      if ((s.contains('cater') || s.contains('food') || s.contains('rest')) &&
+          (pCat.contains('cater') ||
+              pCat.contains('food') ||
+              pCat.contains('rest')))
+        return true;
+
+      // Decoration
+      if (s.contains('decor') && pCat.contains('decor')) return true;
+
+      return false;
+    }
+
+    // Filter vendors and flatten to products in one pass
     final List<Map<String, dynamic>> productsWithVendors = [];
-    for (var vendor in matchedVendors) {
+    final searchCategory = category;
+
+    for (var vendor in userProvider.approvedVendors) {
       for (var product in vendor.products) {
-        // If searching specific category, verify this individual product matches
-        // logic should mirror the vendor filter logic
-        // If searching specific category, verify this individual product matches
-        // logic should mirror the vendor filter logic
-        if (category != null &&
-            category != 'Others' &&
-            category != 'മറ്റുള്ളവ') {
-          final searchCategory = category!.toLowerCase();
-          // Determine if this is a specific product search
-          bool isSpecificSearch =
-              searchCategory.contains('car') ||
-              searchCategory.contains('vehicle') ||
-              searchCategory.contains('wear') ||
-              searchCategory.contains('food') ||
-              searchCategory.contains('cater') ||
-              searchCategory.contains('decor') ||
-              searchCategory.contains('photo') ||
-              searchCategory.contains('music') ||
-              searchCategory.contains('dj') ||
-              searchCategory.contains('convention') ||
-              searchCategory.contains('hall');
-
-          bool productMatches =
-              product.name.toLowerCase().contains(searchCategory) ||
-              (product.categoryType?.toLowerCase().contains(searchCategory) ??
-                  false) ||
-              (product.subType?.toLowerCase().contains(searchCategory) ??
-                  false) ||
-              // Handle Synonyms based on Firestore types
-              // Firestore Types: 'Vehicle', 'Convention Center', 'Food', 'Decoration', 'Catering', 'Photography', 'Music/DJ'
-              // 1. Vehicles
-              ((searchCategory.contains('car') ||
-                      searchCategory.contains('vehicle')) &&
-                  (product.categoryType?.toLowerCase().contains('vehicle') ??
-                      false)) ||
-              (searchCategory.contains('vehicle') &&
-                  (product.categoryType?.toLowerCase().contains('car') ??
-                      false)) ||
-              // 2. Convention Center / Halls
-              ((searchCategory.contains('convention') ||
-                      searchCategory.contains('hall')) &&
-                  (product.categoryType?.toLowerCase().contains('convention') ??
-                      false)) ||
-              // 3. Music/DJ
-              ((searchCategory.contains('music') ||
-                      searchCategory.contains('dj')) &&
-                  ((product.categoryType?.toLowerCase().contains('music') ??
-                          false) ||
-                      (product.categoryType?.toLowerCase().contains('dj') ??
-                          false)));
-
-          if (isSpecificSearch && !productMatches) {
-            continue;
-          }
+        bool matches = true;
+        if (searchCategory != null &&
+            searchCategory != 'Others' &&
+            searchCategory != 'മറ്റുള്ളവ') {
+          matches = isProductMatch(product, searchCategory);
         }
 
-        productsWithVendors.add({'product': product, 'vendor': vendor});
+        if (matches) {
+          productsWithVendors.add({'product': product, 'vendor': vendor});
+        }
       }
     }
 
@@ -113,12 +93,6 @@ class VendorListView extends StatelessWidget {
         final vA = a['vendor'] as VendorModel;
         final vB = b['vendor'] as VendorModel;
 
-        // Since we don't have exact coordinates for vendors in VendorModel yet,
-        // we can try to match the "location" string or use a fallback.
-        // If VendorModel is updated to include lat/long, we would use:
-        // double distA = Geolocator.distanceBetween(userModel!.latitude!, userModel!.longitude!, vA.latitude, vA.longitude);
-
-        // For now, prioritize exact location match
         final userAddress = userModel?.currentAddress?.toLowerCase() ?? '';
         bool matchA =
             vA.location.toLowerCase().contains(userAddress) ||

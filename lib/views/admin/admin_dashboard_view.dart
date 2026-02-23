@@ -3,17 +3,14 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/admin_provider.dart';
 import '../../models/user_model.dart';
-import '../../models/event_model.dart';
-import '../../core/constants/app_colors.dart';
 import 'pending_approvals_view.dart';
 
 import 'package:fl_chart/fl_chart.dart';
-import '../../models/booking_model.dart';
-import '../../models/log_model.dart';
 import 'vendor_detail_admin_view.dart';
 import '../common/chat_view.dart';
 import '../../providers/chat_provider.dart';
 import '../../core/utils/image_helper.dart';
+import 'vendors_by_category_view.dart';
 
 class AdminDashboardView extends StatefulWidget {
   const AdminDashboardView({super.key});
@@ -246,6 +243,19 @@ class AdminHomeTab extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) => const PendingApprovalsView(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildQuickAction(
+            context,
+            'Vendors by Category',
+            Icons.category_outlined,
+            const Color(0xFF904CC1),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const VendorsByCategoryView(),
               ),
             ),
           ),
